@@ -1,73 +1,75 @@
-// ═══════════════════════════════════════════════════════
 // ui/metricsRenderer.js — Renderizador de métricas y tablas
-// Actualiza las stat-boxes, tablas de CPU y memoria, y el análisis de fragmentación
-// ═══════════════════════════════════════════════════════
 
-/**
- * Actualiza las cajas de métricas de CPU en la interfaz.
- *
- * @param {Array}  procesosResultado - Procesos con métricas calculadas
- * @param {number} tiempoTotal       - Tiempo total de la simulación
- */
-export function actualizarMetricasCPU(procesosResultado, tiempoTotal) {
-  const procesosCompletados = procesosResultado.filter(p => p.fin > -1);
-
-  if (procesosCompletados.length === 0) return;
-
-  // Tiempo de espera promedio
-  const tePromedio = procesosCompletados.reduce((s, p) => s + p.tiempoEspera, 0) / procesosCompletados.length;
-
-  // Tiempo de retorno promedio
-  const trPromedio = procesosCompletados.reduce((s, p) => s + p.tiempoRetorno, 0) / procesosCompletados.length;
-
-  // Tiempo útil de CPU (excluyendo IDLE)
-  const tiempoUtil = procesosCompletados.reduce((s, p) => s + p.ejecucion, 0);
-  const usoCPU     = tiempoTotal > 0 ? ((tiempoUtil / tiempoTotal) * 100).toFixed(1) : '0.0';
-
-  // Throughput: procesos por unidad de tiempo
-  const throughput = tiempoTotal > 0 ? (procesosCompletados.length / tiempoTotal).toFixed(2) : '0';
-
-  // Actualizar elementos del DOM con animación
-  actualizarCajaMetrica('mvUsoCPU',    usoCPU + '%',        'cmUsoCPU');
-  actualizarCajaMetrica('mvTEPromedio', tePromedio.toFixed(2), 'cmTEPromedio');
-  actualizarCajaMetrica('mvTRPromedio', trPromedio.toFixed(2), 'cmTRPromedio');
-  actualizarCajaMetrica('mvThroughput', throughput,            'cmThroughput');
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-/**
- * Actualiza las cajas de métricas de memoria en la interfaz.
- *
- * @param {Object} metricas        - Objeto con métricas de memoria
- * @param {number} totalProcesos   - Total de procesos intentados
- */
+function max3(n) {
+  if (typeof n !== 'number' || isNaN(n)) return '\u2014';
+  return parseFloat(n.toFixed(3)).toString();
+}
+
+export function actualizarMetricasCPU(todosProcesos, tiempoActual, eventosGantt) {
+  const completados = todosProcesos.filter(p => p.fin !== undefined && p.fin > -1 && p.fin <= tiempoActual);
+  const totalProcStr = String(completados.length);
+
+  let tePromedioStr = '\u2014';
+  if (completados.length > 0) {
+    const te = completados.reduce((s, p) => s + (p.tiempoEspera || 0), 0) / completados.length;
+    tePromedioStr = te.toFixed(2);
+  }
+
+  let trPromedioStr = '\u2014';
+  if (completados.length > 0) {
+    const tr = completados.reduce((s, p) => s + (p.tiempoRetorno || 0), 0) / completados.length;
+    trPromedioStr = tr.toFixed(2);
+  }
+
+  let usoCPUStr = '0.0';
+  if (tiempoActual > 0) {
+    const tiempoUtil = eventosGantt && eventosGantt.length
+      ? eventosGantt
+          .filter(ev => ev.proceso !== 'IDLE' && ev.inicio < tiempoActual)
+          .reduce((s, ev) => s + (Math.min(ev.fin, tiempoActual) - ev.inicio), 0)
+      : completados.reduce((s, p) => s + (p.ejecucion || 0), 0);
+    usoCPUStr = ((tiempoUtil / tiempoActual) * 100).toFixed(1);
+  }
+
+  const throughputStr = tiempoActual > 0
+    ? (completados.length / tiempoActual).toFixed(2)
+    : '0.00';
+
+  actualizarCajaMetrica('mvTotalProc',  totalProcStr,    'cmTotalProc');
+  actualizarCajaMetrica('mvUsoCPU',     usoCPUStr + '%', 'cmUsoCPU');
+  actualizarCajaMetrica('mvTEPromedio', tePromedioStr,   'cmTEPromedio');
+  actualizarCajaMetrica('mvTRPromedio', trPromedioStr,   'cmTRPromedio');
+  actualizarCajaMetrica('mvThroughput', throughputStr,   'cmThroughput');
+}
+
 export function actualizarMetricasMemoria(metricas, totalProcesos) {
-  actualizarCajaMetrica('mvUsoMem',  metricas.porcentajeUso + '%',                              'cmUsoMem');
-  actualizarCajaMetrica('mvFragInt', metricas.fragInterna + 'KB',                              'cmFragInt');
-  actualizarCajaMetrica('mvFragExt', metricas.fragExterna + 'KB',                              'cmFragExt');
-  actualizarCajaMetrica('mvProcMem', metricas.procesosAsignados + '/' + totalProcesos,         'cmProcMem');
+  const memoriaLibreKB = metricas.fragExterna || 0;
+  const memoriaLibreStr = memoriaLibreKB + ' KB';
+
+  actualizarCajaMetrica('mvUsoMem',   metricas.porcentajeUso + '%',                          'cmUsoMem');
+  actualizarCajaMetrica('mvMemLibre', memoriaLibreStr,                                        'cmMemLibre');
+  actualizarCajaMetrica('mvFragInt',  max3(metricas.fragInterna) + 'KB',                       'cmFragInt');
+  actualizarCajaMetrica('mvFragExt',  max3(metricas.fragExterna) + 'KB',                       'cmFragExt');
+  actualizarCajaMetrica('mvProcMem',  metricas.procesosAsignados + '/' + totalProcesos,       'cmProcMem');
 }
 
-/**
- * Actualiza el valor de una caja de métrica con animación.
- *
- * @param {string} idValor - ID del elemento donde se muestra el valor
- * @param {string} valor   - Valor a mostrar
- * @param {string} idCaja  - ID de la caja (para la animación del borde)
- */
 function actualizarCajaMetrica(idValor, valor, idCaja) {
   const elValor = document.getElementById(idValor);
   const elCaja  = document.getElementById(idCaja);
   if (!elValor || !elCaja) return;
-
   elValor.textContent = valor;
   elCaja.classList.add('cargado');
 }
 
-/**
- * Renderiza la tabla de planificación de CPU con todas las métricas por proceso.
- *
- * @param {Array} procesosResultado - Procesos con métricas calculadas
- */
 export function renderizarTablaCPU(procesosResultado) {
   const cuerpo = document.getElementById('cuerpoTablaCPU');
   if (!cuerpo) return;
@@ -76,17 +78,16 @@ export function renderizarTablaCPU(procesosResultado) {
   procesosResultado.forEach((proc, indice) => {
     const terminado = proc.fin > -1;
     const fila = document.createElement('tr');
-    fila.style.animationDelay = `${indice * 25}ms`;
-    fila.style.animation      = 'aparecer 0.3s ease both';
+    fila.style.animation = `aparecer 0.3s ease both ${indice * 25}ms`;
     fila.innerHTML = `
-      <td><span class="badge-proc" style="background:${proc.color}">${proc.id}</span></td>
+      <td><span class="badge-proc" style="background:${esc(proc.color)}">${esc(proc.id)}</span></td>
       <td>${proc.llegada}</td>
       <td>${proc.ejecucion}</td>
-      <td>${terminado ? proc.inicio   : '—'}</td>
-      <td>${terminado ? proc.fin      : '—'}</td>
-      <td>${terminado ? proc.tiempoEspera    : '—'}</td>
-      <td>${terminado ? proc.tiempoRetorno   : '—'}</td>
-      <td>${terminado ? proc.tiempoRespuesta : '—'}</td>
+      <td>${terminado ? proc.inicio   : '\u2014'}</td>
+      <td>${terminado ? proc.fin      : '\u2014'}</td>
+      <td>${terminado ? proc.tiempoEspera    : '\u2014'}</td>
+      <td>${terminado ? proc.tiempoRetorno   : '\u2014'}</td>
+      <td>${terminado ? proc.tiempoRespuesta : '\u2014'}</td>
       <td>${terminado
         ? '<span class="badge-ok">✓ Completado</span>'
         : '<span class="badge-fail">✗ Pendiente</span>'}</td>
@@ -95,116 +96,64 @@ export function renderizarTablaCPU(procesosResultado) {
   });
 }
 
-/**
- * Renderiza la tabla de gestión de memoria con el estado de cada proceso.
- *
- * @param {Array} procesos  - Lista original de procesos
- * @param {Array} pasosMem  - Pasos de asignación de memoria generados
- */
 export function renderizarTablaMemoria(procesos, pasosMem) {
   const cuerpo = document.getElementById('cuerpoTablaMemoria');
   if (!cuerpo) return;
   cuerpo.innerHTML = '';
 
-  // Construir mapa de resultados por proceso (solo exitosos)
   const mapaResultados = {};
+  const mapaEstadoFinal = {};
   pasosMem.forEach(paso => {
-    // Solo procesar pasos de tipo 'ok' (asignación exitosa)
-    if (paso.proceso && paso.tipo === 'ok' && paso.exito) {
-      // Guardar solo la primera asignación exitosa para cada proceso
-      if (!mapaResultados[paso.proceso]) {
-        mapaResultados[paso.proceso] = paso;
-      }
+    if (!paso.proceso) return;
+    if (paso.tipo === 'ok' && paso.exito) {
+      mapaResultados[paso.proceso] = paso;
+      mapaEstadoFinal[paso.proceso] = 'asignado';
+    } else if (paso.tipo === 'error') {
+      if (!mapaResultados[paso.proceso]) mapaResultados[paso.proceso] = paso;
+      mapaEstadoFinal[paso.proceso] = 'rechazado';
+    } else if (paso.tipo === 'libre') {
+      mapaEstadoFinal[paso.proceso] = 'liberado';
     }
   });
 
   procesos.forEach((proc, indice) => {
     const resultado = mapaResultados[proc.id];
-    const asignado  = resultado && resultado.exito;
+    const estado    = mapaEstadoFinal[proc.id];
+    const tuvoExito = estado === 'asignado' || estado === 'liberado';
     const fila      = document.createElement('tr');
-    fila.style.animationDelay = `${indice * 25}ms`;
-    fila.style.animation      = 'aparecer 0.3s ease both';
-    
-    let tamanioParticion = '—';
-    let dirInicio = '—';
-    let dirFin = '—';
-    let fragInterna = '—';
-    
-    if (asignado) {
-      tamanioParticion = (resultado.tamanioParticion !== undefined) ? resultado.tamanioParticion + ' KB' : '—';
-      dirInicio = (resultado.inicio !== undefined) ? resultado.inicio + ' KB' : '—';
-      dirFin = (resultado.inicio !== undefined) ? (resultado.inicio + proc.tamanioKB - 1) + ' KB' : '—';
-      
+    fila.style.animation = `aparecer 0.3s ease both ${indice * 25}ms`;
+
+    let tamanioParticion = '\u2014';
+    let dirInicio = '\u2014';
+    let dirFin = '\u2014';
+    let fragInterna = '\u2014';
+
+    if (tuvoExito && resultado) {
+      tamanioParticion = (resultado.tamanioParticion !== undefined) ? resultado.tamanioParticion + ' KB' : '\u2014';
+      dirInicio = (resultado.inicio !== undefined) ? resultado.inicio + ' KB' : '\u2014';
+      dirFin = (resultado.inicio !== undefined) ? (resultado.inicio + proc.tamanioKB - 1) + ' KB' : '\u2014';
+
       if (resultado.fragmentacionInterna !== undefined) {
         fragInterna = resultado.fragmentacionInterna > 0
-          ? `<span class="badge-frag">${resultado.fragmentacionInterna} KB</span>`
+          ? `<span class="badge-frag">${max3(resultado.fragmentacionInterna)} KB</span>`
           : `<span class="badge-cero">0 KB</span>`;
       }
     }
-    
+
     fila.innerHTML = `
-      <td><span class="badge-proc" style="background:${proc.color}">${proc.id}</span></td>
+      <td><span class="badge-proc" style="background:${esc(proc.color)}">${esc(proc.id)}</span></td>
       <td>${proc.tamanioKB} KB</td>
       <td>${tamanioParticion}</td>
       <td>${dirInicio}</td>
       <td>${dirFin}</td>
       <td>${fragInterna}</td>
-      <td>${asignado
+      <td>${estado === 'asignado'
         ? '<span class="badge-ok">✓ Asignado</span>'
+        : estado === 'liberado'
+        ? '<span class="badge-fail" style="background:var(--amber);color:#fff">↻ Liberado</span>'
         : '<span class="badge-fail">✗ Rechazado</span>'}</td>
     `;
     cuerpo.appendChild(fila);
   });
 }
 
-/**
- * Renderiza el análisis de fragmentación interna y externa.
- *
- * @param {Array}  bloques     - Estado actual de la memoria
- * @param {number} memoriaTotal - KB totales
- */
-export function renderizarAnalisisFragmentacion(bloques, memoriaTotal) {
-  const contenedor = document.getElementById('analisisFragmentacion');
-  if (!contenedor) return;
-
-  const bloquesProceso = bloques.filter(b => b.tipo === 'proceso');
-  const bloquesLibres  = bloques.filter(b => b.tipo === 'libre');
-  const fragInterna    = bloquesProceso.reduce((s, b) => s + (b.fragmentacionInterna || 0), 0);
-  const fragExterna    = bloquesLibres.reduce((s, b)  => s + b.tamanio, 0);
-
-  // Lista de fragmentación interna por proceso
-  const itemsFragInt = bloquesProceso
-    .filter(b => b.fragmentacionInterna > 0)
-    .map(b => `
-      <div class="frag-item">
-        <span>${b.id}</span>
-        <span style="color:var(--rojo);font-weight:700">+${b.fragmentacionInterna}KB</span>
-      </div>
-    `).join('') || '<div class="frag-item" style="color:var(--texto-suave)">Sin fragmentación interna</div>';
-
-  // Lista de huecos libres
-  const itemsFragExt = bloquesLibres
-    .map(b => `
-      <div class="frag-item">
-        <span>${b.id} @${b.inicio}KB</span>
-        <span style="color:var(--acento2);font-weight:700">${b.tamanio}KB</span>
-      </div>
-    `).join('') || '<div class="frag-item" style="color:var(--texto-suave)">Sin huecos libres</div>';
-
-  contenedor.innerHTML = `
-    <div class="grilla-frag">
-      <div class="card-frag">
-        <div class="card-frag-titulo">Fragmentación Interna</div>
-        <div class="card-frag-valor" style="color:var(--rojo)">${fragInterna} KB</div>
-        <div class="card-frag-desc">Espacio asignado a procesos pero no utilizado dentro de sus particiones.</div>
-        <div class="lista-frag">${itemsFragInt}</div>
-      </div>
-      <div class="card-frag">
-        <div class="card-frag-titulo">Fragmentación Externa</div>
-        <div class="card-frag-valor" style="color:var(--acento2)">${fragExterna} KB</div>
-        <div class="card-frag-desc">Huecos libres dispersos que no pueden usarse juntos sin compactación.</div>
-        <div class="lista-frag">${itemsFragExt}</div>
-      </div>
-    </div>
-  `;
-}

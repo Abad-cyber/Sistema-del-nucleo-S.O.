@@ -1,7 +1,5 @@
-// ═══════════════════════════════════════════════════════
 // main.js — Orquestador principal del Simulador Unificado
 // Coordina CPU + memoria + animación sincronizada
-// ═══════════════════════════════════════════════════════
 
 import { parsearTexto, leerTablaManual, sincronizarTablaDOM, crearFilaTabla, asignarEventosFilas } from './parser.js';
 import { fcfs, sjf, roundRobin, srt } from './planificadores/algoritmos.js';
@@ -9,35 +7,37 @@ import {
   construirMemoriaInicial,
   firstFit, bestFit, worstFit,
   buddySystem, liberarProceso, buddyLiberar,
-  compactarMemoria, calcularMetricasMemoria,
+  calcularMetricasMemoria,
+  COLOR_LIBRE,
 } from './memoria/algoritmos.js';
-import { renderizarMapaMemoria, renderizarLeyenda, actualizarSelectorLiberar } from './ui/memRenderer.js';
+import { renderizarMapaMemoria, renderizarLeyenda, resetColoresMemoria, PALETA_GRADIENTES } from './ui/memRenderer.js';
 import { dibujarGantt, renderizarLeyendaGantt } from './ui/ganttRenderer.js';
-import { actualizarMetricasCPU, actualizarMetricasMemoria, renderizarTablaCPU, renderizarTablaMemoria, renderizarAnalisisFragmentacion } from './ui/metricsRenderer.js';
-import { agregarPasoLog, limpiarLog, rerenderizarLog, agregarItemCola, limpiarListaColas, rerenderizarColas, generarEstadosCola } from './ui/stepLog.js';
+import { actualizarMetricasCPU, actualizarMetricasMemoria, renderizarTablaCPU, renderizarTablaMemoria } from './ui/metricsRenderer.js';
+import { agregarPasoLog, limpiarLog, rerenderizarLog, agregarItemCola, limpiarListaColas, rerenderizarColas, generarEstadosCola, resetColoresProcesos, setPaletaExterna } from './ui/stepLog.js';
 
 // ═══════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════
-let procesos           = [];          // Lista de procesos actuales
+let procesos           = [];
 let eventosGantt       = [];
 let procesosResultado  = [];
 let estadosMemoria     = [];
-let pasosMem           = [];          // Pasos de memoria para el log
-let estadosCola        = [];          // Estados de la cola por paso
-let mapaPasosATiempos  = [];          // Mapea paso (índice) a tiempo de reloj
+let pasosMem           = [];
+let estadosCola        = [];
+let mapaPasosATiempos  = [];
+let limitePasosPorTick = [];
 let memoriaActual      = [];
 let pasoActual         = 0;
 let totalPasos         = 0;
 let estaReproduciendo  = false;
 let timerAnimacion     = null;
+let timerReinicio      = null;
 let memoriaTotal       = 400;
 let memoriaSOReservado = 0;
 let politicaParticion  = 'dinamica';
 let algoMemActual      = 'ff';
 let contadorFilas      = 0;
 
-// Procesos de ejemplo cargados al inicio
 const porDefecto = [
   { id: 'P1', llegada: 0, ejecucion: 5, tamanioKB: 50 },
   { id: 'P2', llegada: 1, ejecucion: 3, tamanioKB: 30 },
@@ -46,11 +46,10 @@ const porDefecto = [
   { id: 'P5', llegada: 5, ejecucion: 4, tamanioKB: 40 },
   { id: 'P6', llegada: 6, ejecucion: 6, tamanioKB: 60 },
 ];
-let vistaGantt         = 'proceso';   // 'proceso' o 'compacto'
-
+let vistaGantt = 'compacto';
 
 const VELOCIDADES = { 1: 2000, 2: 1200, 3: 700, 4: 350, 5: 60 };
-const NOMBRES_VEL = { 1: 'Muy lento', 2: 'Lento', 3: 'Normal', 4: 'Rápido', 5: 'Máximo' };
+const NOMBRES_VEL = { 1: 'Muy lento', 2: 'Lento', 3: 'Normal', 4: 'R\u00e1pido', 5: 'M\u00e1ximo' };
 
 // ═══════════════════════════════════════════════════════
 // INICIO
@@ -63,19 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
   inicializarControlesMemoria();
   inicializarControlesAnimacion();
   inicializarVistasGantt();
-  inicializarBotonesOperaciones();
   inicializarBotonesAdicionales();
 });
 
 // ═══════════════════════════════════════════════════════
-// BOTONES ADICIONALES (Sidebar)
+// BOTONES ADICIONALES
 // ═══════════════════════════════════════════════════════
 function inicializarBotonesAdicionales() {
   document.getElementById('btnEjecutarSidebar')?.addEventListener('click', ejecutarSimulacion);
 }
 
 // ═══════════════════════════════════════════════════════
-// NAVEGACIÓN SPA — sin reload, sin scroll automático
+// NAVEGACIÓN SPA
 // ═══════════════════════════════════════════════════════
 function inicializarNavegacion() {
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -89,148 +87,204 @@ function navegarA(idPagina) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('activo'));
   document.querySelectorAll('.pagina').forEach(p => p.classList.remove('activa'));
   document.querySelector(`[data-pagina="${idPagina}"]`)?.classList.add('activo');
-  document.getElementById(`pagina${idPagina.charAt(0).toUpperCase() + idPagina.slice(1)}`)?.classList.add('activa');
-  // ── Sin scrollIntoView: la página NO se mueve ──
+  const target = document.getElementById(`pagina${idPagina.charAt(0).toUpperCase() + idPagina.slice(1)}`);
+  if (target) {
+    target.classList.add('activa');
+    target.classList.add('visito');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
-// VISTAS DEL GANTT — Compacto / Por proceso / Repetir
+// VISTAS DEL GANTT
 // ═══════════════════════════════════════════════════════
 function inicializarVistasGantt() {
-  document.getElementById('btnVistaProceso')?.addEventListener('click', () => {
-    vistaGantt = 'proceso';
-    document.getElementById('btnVistaProceso')?.classList.add('activo');
-    document.getElementById('btnVistaCompacto')?.classList.remove('activo');
-    redibujarGantt();
-  });
+  document.getElementById('btnVistaCompacto')?.classList.add('activo');
+  document.getElementById('btnVistaProceso')?.classList.remove('activo');
 
   document.getElementById('btnVistaCompacto')?.addEventListener('click', () => {
     vistaGantt = 'compacto';
     document.getElementById('btnVistaCompacto')?.classList.add('activo');
     document.getElementById('btnVistaProceso')?.classList.remove('activo');
-    redibujarGantt();
+    if (eventosGantt.length) redibujarGantt();
   });
 
-  document.getElementById('btnRepetir')?.addEventListener('click', () => {
-    // Reiniciar y volver a reproducir desde el paso 0
-    detenerAutoPlay();
-    pasoActual = 0;
-    limpiarLog();
-    limpiarListaColas();
-    redibujarGantt();
-    actualizarBarraProgreso(0);
-    document.getElementById('contadorPaso').textContent = `Paso 0 / ${totalPasos}`;
-    // Restaurar estado inicial de memoria
-    if (estadosMemoria.length > 0) {
-      memoriaActual = JSON.parse(JSON.stringify(estadosMemoria[0]));
-      renderizarMapaMemoria(memoriaActual, memoriaTotal, -1, false);
-      renderizarLeyenda(memoriaActual);
-    }
-    setTimeout(() => iniciarAutoPlay(), 150);
+  document.getElementById('btnVistaProceso')?.addEventListener('click', () => {
+    vistaGantt = 'proceso';
+    document.getElementById('btnVistaProceso')?.classList.add('activo');
+    document.getElementById('btnVistaCompacto')?.classList.remove('activo');
+    if (eventosGantt.length) redibujarGantt();
   });
 }
 
-/**
- * Redibuja el Gantt con el estado y vista actuales.
- * NO mueve la página.
- */
 function redibujarGantt() {
   if (!eventosGantt.length) return;
-  const tiempoActual = mapaPasosATiempos[Math.max(0, pasoActual - 1)] || 0;
+  const tiempoActual = mapaPasosATiempos[pasoActual] ?? 0;
   dibujarGantt(eventosGantt, procesos, pasoActual, false, vistaGantt, tiempoActual);
 }
 
 // ═══════════════════════════════════════════════════════
-// TABLA MANUAL DE PROCESOS
+// TABLA MANUAL
 // ═══════════════════════════════════════════════════════
-
-/** Recalcula contadorFilas según las filas reales del DOM tras una eliminación. */
 function sincronizarContadorFilas() {
   contadorFilas = document.querySelectorAll('#cuerpoTablaEntrada tr').length;
 }
 
 function inicializarTablaEntrada() {
-
   const cuerpo = document.getElementById('cuerpoTablaEntrada');
   porDefecto.forEach((p, i) => cuerpo.appendChild(crearFilaTabla(i, p.id, p.llegada, p.ejecucion, p.tamanioKB)));
   contadorFilas = porDefecto.length;
-  // Instalar el delegador de eventos una sola vez para todos los botones ✕
   asignarEventosFilas(sincronizarContadorFilas);
 
   document.getElementById('btnAgregarFila')?.addEventListener('click', () => {
     const c = document.getElementById('cuerpoTablaEntrada');
     c.appendChild(crearFilaTabla(contadorFilas++));
-    // No llamar asignarEventosFilas aquí: la delegación ya cubre las filas nuevas
     c.lastElementChild?.querySelector('.celda-inp')?.focus();
   });
 }
 
 // ═══════════════════════════════════════════════════════
-// ARCHIVO DRAG & DROP
+// ARRASTRE DE ARCHIVO
 // ═══════════════════════════════════════════════════════
 function inicializarArchivoArrastre() {
   const zona  = document.getElementById('zonaArrastre');
   const input = document.getElementById('inputArchivo');
-  input?.addEventListener('change', e => manejarArchivo(e.target.files[0]));
-  zona?.addEventListener('dragover',  e => { e.preventDefault(); zona.classList.add('arrastrando'); });
-  zona?.addEventListener('dragleave', () => zona.classList.remove('arrastrando'));
-  zona?.addEventListener('drop', e => {
+
+  if (!zona || !input) return;
+
+  input.addEventListener('change', e => {
+    if (e.target.files && e.target.files.length > 0) {
+      manejarArchivo(e.target.files[0]);
+    }
+  });
+
+  zona.addEventListener('dragover', e => {
     e.preventDefault();
+    e.stopPropagation();
+    zona.classList.add('arrastrando');
+  });
+
+  zona.addEventListener('dragleave', e => {
+    e.preventDefault();
+    e.stopPropagation();
     zona.classList.remove('arrastrando');
-    manejarArchivo(e.dataTransfer.files[0]);
+  });
+
+  zona.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    zona.classList.remove('arrastrando');
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      manejarArchivo(e.dataTransfer.files[0]);
+    }
   });
 }
 
 function manejarArchivo(archivo) {
   if (!archivo) return;
-  const ext = archivo.name.split('.').pop().toLowerCase();
-  if (!['csv','txt'].includes(ext)) { mostrarToast('Solo .csv o .txt', 'error'); return; }
-  const lector = new FileReader();
-  lector.onload = e => {
-    const ps = parsearTexto(e.target.result);
-    if (!ps.length) { mostrarToast('No se encontraron procesos válidos.', 'error'); return; }
-    sincronizarTablaDOM(ps, sincronizarContadorFilas);
-    contadorFilas = ps.length;
-    document.getElementById('nombreArchivo').textContent = `📂 ${archivo.name}  (${ps.length} proceso(s))`;
-    mostrarToast(`✓ ${ps.length} proceso(s) cargados`, 'exito');
+  const zona = document.getElementById('zonaArrastre');
+
+  const animarZona = (clase) => {
+    if (!zona) return;
+    zona.classList.remove('arrastrando', 'exito', 'error-anim');
+    void zona.offsetWidth;
+    zona.classList.add(clase);
+    setTimeout(() => zona.classList.remove(clase), 900);
   };
+
+  const ext = archivo.name.split('.').pop().toLowerCase();
+  if (!['csv', 'txt'].includes(ext)) {
+    animarZona('error-anim');
+    mostrarToast('\u274c Solo se permiten archivos .csv o .txt', 'error');
+    return;
+  }
+
+  const maxSize = 5 * 1024 * 1024;
+  if (archivo.size > maxSize) {
+    animarZona('error-anim');
+    mostrarToast('\u274c El archivo es muy grande (m\u00e1ximo 5MB)', 'error');
+    return;
+  }
+
+  const lector = new FileReader();
+
+  lector.onerror = () => {
+    animarZona('error-anim');
+    mostrarToast('\u274c Error al leer el archivo', 'error');
+  };
+
+  lector.onabort = () => {
+    animarZona('error-anim');
+    mostrarToast('\u26a0\ufe0f Lectura de archivo cancelada', 'error');
+  };
+
+  lector.onload = e => {
+    try {
+      const contenido = e.target.result;
+      if (!contenido || contenido.trim().length === 0) {
+        animarZona('error-anim');
+        mostrarToast('\u274c El archivo est\u00e1 vac\u00edo', 'error');
+        return;
+      }
+
+      const ps = parsearTexto(contenido);
+      if (!ps.length) {
+        animarZona('error-anim');
+        mostrarToast('\u274c No se encontraron procesos v\u00e1lidos', 'error');
+        return;
+      }
+
+      sincronizarTablaDOM(ps, sincronizarContadorFilas);
+      contadorFilas = ps.length;
+
+      const nombreEscapado = document.createElement('span');
+      nombreEscapado.textContent = archivo.name;
+      document.getElementById('nombreArchivo').innerHTML = `\ud83d\udcc2 ${nombreEscapado.innerHTML}  (${ps.length} proceso(s))`;
+      animarZona('exito');
+      mostrarToast(`\u2713 ${ps.length} proceso(s) cargados correctamente`, 'exito');
+    } catch (error) {
+      animarZona('error-anim');
+      mostrarToast(`\u274c Error al procesar el archivo: ${error.message}`, 'error');
+    }
+  };
+
   lector.readAsText(archivo);
 }
 
 // ═══════════════════════════════════════════════════════
-// CONTROLES DE SELECCIÓN DE ALGORITMO
+// CONTROLES ALGORITMOS
 // ═══════════════════════════════════════════════════════
 function inicializarControlesAlgoritmo() {
-  const cardsCPU = { fcfs:'cardFCFS', sjf:'cardSJF', rr:'cardRR', srt:'cardSRT' };
+  const cardsCPU = { fcfs: 'cardFCFS', sjf: 'cardSJF', rr: 'cardRR', srt: 'cardSRT' };
   document.querySelectorAll('input[name="algoCPU"]').forEach(r => {
     r.addEventListener('change', function () {
-      Object.entries(cardsCPU).forEach(([v,id]) =>
+      Object.entries(cardsCPU).forEach(([v, id]) =>
         document.getElementById(id)?.classList.toggle('seleccionado', v === this.value));
       document.getElementById('cajaQuantum')?.classList.toggle('inactivo', this.value !== 'rr');
     });
   });
 
-  const cardsMem = { ff:'cardFF', bf:'cardBF', wf:'cardWF', buddy:'cardBuddy' };
+  const cardsMem = { ff: 'cardFF', bf: 'cardBF', wf: 'cardWF', buddy: 'cardBuddy' };
   document.querySelectorAll('input[name="algoMem"]').forEach(r => {
     r.addEventListener('change', function () {
-      Object.entries(cardsMem).forEach(([v,id]) =>
+      Object.entries(cardsMem).forEach(([v, id]) =>
         document.getElementById(id)?.classList.toggle('seleccionado', v === this.value));
       algoMemActual = this.value;
     });
   });
 }
 
-// ═══════════════════════════════════════════════════════
-// CONTROLES DE MEMORIA Y QUANTUM
-// ═══════════════════════════════════════════════════════
 function inicializarControlesMemoria() {
   document.getElementById('btnQuantumMenos')?.addEventListener('click', () => {
     const inp = document.getElementById('inputQuantum');
-    if (inp) inp.value = Math.max(1, parseInt(inp.value) - 1);
+    if (!inp) return;
+    const val = parseInt(inp.value) || 2;
+    inp.value = Math.max(1, val - 1);
   });
   document.getElementById('btnQuantumMas')?.addEventListener('click', () => {
     const inp = document.getElementById('inputQuantum');
-    if (inp) inp.value = parseInt(inp.value) + 1;
+    if (!inp) return;
+    const val = parseInt(inp.value) || 2;
+    inp.value = val + 1;
   });
 
   document.querySelectorAll('.btn-politica').forEach(btn => {
@@ -247,13 +301,14 @@ function inicializarControlesMemoria() {
 // EJECUCIÓN DE LA SIMULACIÓN
 // ═══════════════════════════════════════════════════════
 function ejecutarSimulacion() {
-  // 1. Leer procesos
+  const btnEjecutar = document.getElementById('btnEjecutarSidebar');
+  if (!btnEjecutar) return;
+
   procesos = leerTablaManual();
   if (!procesos.length) { mostrarToast('Ingresa al menos un proceso.', 'error'); return; }
 
-  // 2. Leer parámetros
-  memoriaTotal       = parseInt(document.getElementById('memoriaTotal')?.value)       || 400;
-  memoriaSOReservado = parseInt(document.getElementById('memoriaSOReservado')?.value) || 0;
+  memoriaTotal       = Math.max(64, parseInt(document.getElementById('memoriaTotal')?.value)       || 400);
+  memoriaSOReservado = Math.max(0, parseInt(document.getElementById('memoriaSOReservado')?.value) || 0);
   const algoCPU      = document.querySelector('input[name="algoCPU"]:checked')?.value || 'fcfs';
   algoMemActual      = document.querySelector('input[name="algoMem"]:checked')?.value || 'ff';
   const quantum      = parseInt(document.getElementById('inputQuantum')?.value)       || 2;
@@ -262,7 +317,24 @@ function ejecutarSimulacion() {
     mostrarToast('El SO reservado debe ser menor que la memoria total.', 'error'); return;
   }
 
-  // 3. Ejecutar planificador CPU
+  // Loading state
+  const textoOriginal = btnEjecutar.innerHTML;
+  btnEjecutar.disabled = true;
+  btnEjecutar.innerHTML = '<span class="btn-ej-icono" aria-hidden="true"><span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spinLogo .6s linear infinite"></span></span><span class="btn-ej-texto">Simulando\u2026</span>';
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      try {
+        ejecutarSimulacionInterna(algoCPU, quantum);
+      } finally {
+        btnEjecutar.disabled = false;
+        btnEjecutar.innerHTML = textoOriginal;
+      }
+    }, 50);
+  });
+}
+
+function ejecutarSimulacionInterna(algoCPU, quantum) {
   let resCPU;
   switch (algoCPU) {
     case 'fcfs': resCPU = fcfs(procesos);                break;
@@ -274,91 +346,79 @@ function ejecutarSimulacion() {
   eventosGantt      = resCPU.eventosGantt;
   procesosResultado = resCPU.procesosResultado;
 
-  // 4. Construir memoria inicial
   let tamaniosFijos = [];
   if (politicaParticion === 'fija') {
     tamaniosFijos = (document.getElementById('particionesFijas')?.value || '')
       .split(',').map(s => parseInt(s.trim())).filter(n => n > 0);
-    const suma = tamaniosFijos.reduce((s,n) => s+n, 0);
+    const suma = tamaniosFijos.reduce((s, n) => s + n, 0);
     if (suma + memoriaSOReservado > memoriaTotal) {
       mostrarToast(`Particiones (${suma}KB) + SO (${memoriaSOReservado}KB) superan la memoria total.`, 'error'); return;
     }
   }
-  const memoriaInicial = construirMemoriaInicial(memoriaTotal, memoriaSOReservado, politicaParticion, tamaniosFijos);
 
-  // 5. Simular memoria sincronizada con el Gantt
-  const { snapshotsMemoria, registroPasos, mapeoTiempos, ticksOrdenados } = simularMemoriaSincronizada(
-    eventosGantt, procesosResultado, memoriaInicial, algoMemActual
+  const memoriaInicial = construirMemoriaInicial(memoriaTotal, memoriaSOReservado, politicaParticion, tamaniosFijos, algoMemActual);
+
+  const { snapshotsMemoria, registroPasos, mapeoTiempos, ticksOrdenados, acumPasos } = simularMemoriaSincronizada(
+    eventosGantt, procesosResultado, memoriaInicial, algoMemActual, politicaParticion, tamaniosFijos
   );
   estadosMemoria = snapshotsMemoria;
   pasosMem       = registroPasos;
   mapaPasosATiempos = mapeoTiempos;
 
-  // 6. Generar estados de la cola de procesos por paso
-  // Ahora se generan estados para cada tick importante (no solo para eventos del Gantt)
   estadosCola = generarEstadosCola(ticksOrdenados, procesosResultado, eventosGantt);
+  limitePasosPorTick = acumPasos;
 
-  // 7. Preparar animación
-  // totalPasos = cantidad de snapshots generados (por ticks importantes + inicial + final)
-  totalPasos    = estadosMemoria.length;
+  totalPasos    = estadosMemoria.length - 1;
   pasoActual    = 0;
-  memoriaActual = JSON.parse(JSON.stringify(memoriaInicial));
+  memoriaActual = estadosMemoria[0];
+
+  document.getElementById('graficaEmpty')?.classList.add('oculto');
+  document.getElementById('graficaContenido')?.classList.remove('oculto');
+  document.getElementById('tablasEmpty')?.classList.add('oculto');
+  document.getElementById('tablasContenido')?.classList.remove('oculto');
+
+  resetColoresMemoria();
+  resetColoresProcesos();
+  setPaletaExterna(PALETA_GRADIENTES);
 
   limpiarLog();
   limpiarListaColas();
   reiniciarControlesAnimacion();
 
-  // 8. Renderizar tablas y leyendas
   renderizarTablaCPU(procesosResultado);
   renderizarTablaMemoria(procesos, pasosMem);
   renderizarLeyendaGantt(procesos);
 
-  // 9. Renderizar estado inicial del mapa de memoria
   renderizarMapaMemoria(memoriaActual, memoriaTotal, -1, false);
   renderizarLeyenda(memoriaActual);
 
-  // 10. Actualizar pills del header
-  const nombresCPU = { fcfs:'FCFS', sjf:'SJF', rr:`RR Q=${quantum}`, srt:'SRT' };
-  const nombresMem = { ff:'First Fit', bf:'Best Fit', wf:'Worst Fit', buddy:'Buddy' };
+  const metMemInicial = calcularMetricasMemoria(memoriaActual, memoriaTotal);
+  actualizarMetricasCPU(procesosResultado, 0, eventosGantt);
+  actualizarMetricasMemoria(metMemInicial, procesos.length);
+
+  const nombresCPU = { fcfs: 'FCFS', sjf: 'SJF', rr: `RR Q=${quantum}`, srt: 'SRT' };
+  const nombresMem = { ff: 'First Fit', bf: 'Best Fit', wf: 'Worst Fit', buddy: 'Buddy' };
   const pillCPU = document.getElementById('pillCPU');
   const pillMem = document.getElementById('pillMem');
-  if (pillCPU) { pillCPU.textContent = `CPU: ${nombresCPU[algoCPU]}`; pillCPU.classList.add('activo'); }
-  if (pillMem) { pillMem.textContent = `MEM: ${nombresMem[algoMemActual]}`; pillMem.classList.add('activo'); }
+  if (pillCPU) { pillCPU.innerHTML = `<span class="pill-pulse"></span>CPU: ${nombresCPU[algoCPU]}`; pillCPU.classList.add('activo'); }
+  if (pillMem) { pillMem.innerHTML = `<span class="pill-pulse" style="background:#f59e0b"></span>MEM: ${nombresMem[algoMemActual]}`; pillMem.classList.add('activo'); }
 
-  // 11. Navegar a Gráfica — SIN scroll automático
   navegarA('grafica');
 
-  // 12. Iniciar auto-play con delay breve para que el DOM se actualice
-  setTimeout(() => iniciarAutoPlay(), 200);
-  mostrarToast(`Simulación ${nombresCPU[algoCPU]} + ${nombresMem[algoMemActual]} lista — ${totalPasos} paso(s)`, 'exito');
+  timerAnimacion = setTimeout(() => iniciarAutoPlay(), 200);
+  mostrarToast(`Simulaci\u00f3n ${nombresCPU[algoCPU]} + ${nombresMem[algoMemActual]} lista \u2014 ${totalPasos} paso(s)`, 'exito');
 }
 
 // ═══════════════════════════════════════════════════════
 // SINCRONIZACIÓN CPU ↔ MEMORIA
 // ═══════════════════════════════════════════════════════
 
-/**
- * Simula la asignación/liberación de memoria tick a tick.
- *
- * MODELO:
- * - Cada tick del tiempo es un paso de animación.
- * - En cada tick se asignan los procesos que acaban de llegar (llegada === tick).
- * - En cada tick se liberan los procesos que acaban de terminar (finReal === tick).
- * - Los snapshots reflejan el estado de memoria EN ESE TICK exacto.
- * - Al final se garantiza un snapshot con todo libre.
- */
-function simularMemoriaSincronizada(eventosGantt, procesosRes, memoriaInicial, algoMem) {
+function simularMemoriaSincronizada(eventosGantt, procesosRes, memoriaInicial, algoMem, politicaParticion, tamaniosFijos) {
   const snapshotsMemoria   = [];
   const registroPasos      = [];
   const procesosEnMemoria  = new Set();
   const procesosTerminados = new Set();
 
-  // Tiempo total de la simulación
-  const tiempoTotal = eventosGantt.length > 0
-    ? Math.max(...eventosGantt.map(e => e.fin))
-    : 0;
-
-  // Fin real de cada proceso = tick en que termina su último segmento en el Gantt
   const finRealPorProceso = {};
   eventosGantt.forEach(ev => {
     if (ev.proceso === 'IDLE') return;
@@ -368,23 +428,29 @@ function simularMemoriaSincronizada(eventosGantt, procesosRes, memoriaInicial, a
   });
 
   let estadoMem = JSON.parse(JSON.stringify(memoriaInicial));
+  const acumPasos = [0];
 
-  // ── Asigna memoria a un proceso ──
   function asignarMemoria(proceso) {
     if (procesosEnMemoria.has(proceso.id)) return;
     procesosEnMemoria.add(proceso.id);
     let resultado;
     const pasosBuddy = [];
-    switch (algoMem) {
-      case 'ff':    resultado = firstFit(proceso, estadoMem);                break;
-      case 'bf':    resultado = bestFit(proceso, estadoMem);                 break;
-      case 'wf':    resultado = worstFit(proceso, estadoMem);                break;
-      case 'buddy': resultado = buddySystem(proceso, estadoMem, pasosBuddy); break;
-      default:      resultado = firstFit(proceso, estadoMem);
+
+    if (politicaParticion === 'fija') {
+      resultado = asignarEnParticionFija(proceso, estadoMem);
+    } else {
+      switch (algoMem) {
+        case 'ff':    resultado = firstFit(proceso, estadoMem);                break;
+        case 'bf':    resultado = bestFit(proceso, estadoMem);                 break;
+        case 'wf':    resultado = worstFit(proceso, estadoMem);                break;
+        case 'buddy': resultado = buddySystem(proceso, estadoMem, pasosBuddy); break;
+        default:      resultado = firstFit(proceso, estadoMem);
+      }
+      pasosBuddy.forEach(p =>
+        registroPasos.push({ proceso: proceso.id, tipo: 'buddy', exito: true, descripcion: p.descripcion })
+      );
     }
-    pasosBuddy.forEach(p =>
-      registroPasos.push({ proceso: proceso.id, tipo: 'buddy', exito: true, descripcion: p.descripcion })
-    );
+
     registroPasos.push({
       proceso:              proceso.id,
       tipo:                 resultado.exito ? 'ok' : 'error',
@@ -393,15 +459,62 @@ function simularMemoriaSincronizada(eventosGantt, procesosRes, memoriaInicial, a
       inicio:               resultado.inicio,
       tamanioParticion:     resultado.tamanioParticion,
       fragmentacionInterna: resultado.fragmentacionInterna,
+      fragEsInterna:        resultado.fragEsInterna,
     });
   }
 
-  // ── Libera memoria de un proceso ──
+  function asignarEnParticionFija(proceso, memoria) {
+    for (let i = 0; i < memoria.length; i++) {
+      const bloque = memoria[i];
+      if (bloque.tipo === 'libre' && bloque.tamanio >= proceso.tamanioKB) {
+        const fragmentacion = bloque.tamanio - proceso.tamanioKB;
+        const bloqueAsignado = {
+          id:                   proceso.id,
+          tipo:                 'proceso',
+          inicio:               bloque.inicio,
+          tamanio:              proceso.tamanioKB,
+          tamanioParticion:     bloque.tamanio,
+          color:                proceso.color,
+          fragmentacionInterna: fragmentacion,
+        };
+        memoria.splice(i, 1, bloqueAsignado);
+        return {
+          exito:                true,
+          inicio:               bloqueAsignado.inicio,
+          tamanioParticion:     bloque.tamanio,
+          fragmentacionInterna: fragmentacion,
+          fragEsInterna:        true,
+          descripcion: `${proceso.id} asignado en partici\u00f3n @${bloqueAsignado.inicio}KB (${bloque.tamanio}KB). Usa ${proceso.tamanioKB}KB, fragmentaci\u00f3n interna: ${fragmentacion}KB.`,
+        };
+      }
+    }
+    return { exito: false, descripcion: `No hay partici\u00f3n libre \u2265 ${proceso.tamanioKB}KB. Proceso ${proceso.id} rechazado.`, fragmentacionInterna: 0 };
+  }
+
   function liberarMemoria(proceso) {
     if (procesosTerminados.has(proceso.id)) return;
     if (!procesosEnMemoria.has(proceso.id)) return;
     procesosTerminados.add(proceso.id);
-    if (algoMem === 'buddy') {
+
+    if (politicaParticion === 'fija') {
+      const idx = estadoMem.findIndex(b => b.id === proceso.id && b.tipo === 'proceso');
+      if (idx !== -1) {
+        const bloque = estadoMem[idx];
+        estadoMem[idx] = {
+          id:      `H${bloque.inicio}`,
+          tipo:    'libre',
+          inicio:  bloque.inicio,
+          tamanio: bloque.tamanioParticion,
+          color:   COLOR_LIBRE,
+        };
+        registroPasos.push({
+          proceso: proceso.id,
+          tipo:    'libre',
+          exito:   true,
+          descripcion: `${proceso.id} liberado. Partici\u00f3n completa de ${bloque.tamanioParticion}KB en @${bloque.inicio}KB marcada libre.`
+        });
+      }
+    } else if (algoMem === 'buddy') {
       const pb = [];
       buddyLiberar(proceso.id, estadoMem, pb);
       pb.forEach(p =>
@@ -415,49 +528,45 @@ function simularMemoriaSincronizada(eventosGantt, procesosRes, memoriaInicial, a
     }
   }
 
-  // ── Snapshot inicial t=0 antes de cualquier evento ──
   snapshotsMemoria.push(JSON.parse(JSON.stringify(estadoMem)));
-  const mapeoTiempos = [0]; // Snapshot inicial en t=0
+  const mapeoTiempos = [0];
 
-  // ── Recopilar todos los ticks importantes (llegadas y cambios de evento) ──
   const ticksImportantes = new Set();
   eventosGantt.forEach(ev => {
     ticksImportantes.add(ev.inicio);
     ticksImportantes.add(ev.fin);
   });
   procesosRes.forEach(p => {
-    if (p.llegada > 0) ticksImportantes.add(p.llegada);
+    ticksImportantes.add(p.llegada);
   });
   const ticksOrdenados = Array.from(ticksImportantes).sort((a, b) => a - b);
 
-  // ── Recorrer cada tick importante ──
-  // Genera snapshots cuando llega un nuevo proceso o cambia el evento del Gantt
-  ticksOrdenados.forEach((tick) => {
-    // Asignar procesos que llegan EN este tick
-    procesosRes.forEach(p => {
-      if (p.llegada === tick && !procesosEnMemoria.has(p.id)) {
-        asignarMemoria(p);
-      }
-    });
+  const primerTick = ticksOrdenados[0] ?? 0;
+  procesosRes.forEach(p => {
+    if (p.llegada < primerTick && !procesosEnMemoria.has(p.id)) {
+      asignarMemoria(p);
+    }
+  });
 
-    // Liberar procesos que terminan EN este tick
+  ticksOrdenados.forEach((tick) => {
     procesosRes.forEach(p => {
       if (finRealPorProceso[p.id] === tick) {
         liberarMemoria(p);
       }
     });
 
-    // Generar snapshot después de asignaciones/liberaciones
+    procesosRes.forEach(p => {
+      if (p.llegada === tick && !procesosEnMemoria.has(p.id)) {
+        asignarMemoria(p);
+      }
+    });
+
+    acumPasos.push(registroPasos.length);
     snapshotsMemoria.push(JSON.parse(JSON.stringify(estadoMem)));
     mapeoTiempos.push(tick);
   });
 
-  // ── Snapshot FINAL: después de liberar el último proceso ──
-  // Garantiza que al terminar la animación el mapa quede todo libre
-  snapshotsMemoria.push(JSON.parse(JSON.stringify(estadoMem)));
-  mapeoTiempos.push(ticksOrdenados.length > 0 ? Math.max(...ticksOrdenados) : 0);
-
-  return { snapshotsMemoria, registroPasos, mapeoTiempos, ticksOrdenados };
+  return { snapshotsMemoria, registroPasos, mapeoTiempos, ticksOrdenados, acumPasos };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -479,17 +588,21 @@ function inicializarControlesAnimacion() {
   document.getElementById('btnReiniciar')?.addEventListener('click', () => {
     detenerAutoPlay();
     pasoActual = 0;
+    resetColoresMemoria();
+    resetColoresProcesos();
+    setPaletaExterna(PALETA_GRADIENTES);
     limpiarLog();
     limpiarListaColas();
     if (estadosMemoria.length > 0) {
-      memoriaActual = JSON.parse(JSON.stringify(estadosMemoria[0]));
+      memoriaActual = estadosMemoria[0];
       renderizarMapaMemoria(memoriaActual, memoriaTotal, -1, false);
       renderizarLeyenda(memoriaActual);
     }
     redibujarGantt();
     actualizarBarraProgreso(0);
     document.getElementById('contadorPaso').textContent = `Paso 0 / ${totalPasos}`;
-    setTimeout(() => iniciarAutoPlay(), 200);
+    clearTimeout(timerReinicio);
+    timerReinicio = setTimeout(() => iniciarAutoPlay(), 200);
   });
   document.getElementById('sliderVelocidad')?.addEventListener('input', function () {
     document.getElementById('textoVelocidad').textContent = NOMBRES_VEL[this.value];
@@ -508,7 +621,7 @@ function iniciarAutoPlay() {
   if (estaReproduciendo || totalPasos === 0) return;
   estaReproduciendo = true;
   const btn = document.getElementById('btnPlayPausa');
-  if (btn) { btn.textContent = '⏸ Pausar'; btn.classList.add('activo'); }
+  if (btn) { btn.textContent = '\u23f8 Pausar'; btn.classList.add('activo'); }
   reproducirSiguientePaso();
 }
 
@@ -516,14 +629,14 @@ function detenerAutoPlay() {
   estaReproduciendo = false;
   clearTimeout(timerAnimacion);
   const btn = document.getElementById('btnPlayPausa');
-  if (btn) { btn.textContent = '▶ Auto'; btn.classList.remove('activo'); }
+  if (btn) { btn.textContent = '\u25b6 Auto'; btn.classList.remove('activo'); }
 }
 
 function reproducirSiguientePaso() {
   if (!estaReproduciendo) return;
   if (pasoActual >= totalPasos) {
     detenerAutoPlay();
-    mostrarToast('Simulación completada ✓', 'exito');
+    mostrarToast('Simulaci\u00f3n completada \u2713', 'exito');
     return;
   }
   mostrarPaso(pasoActual + 1);
@@ -531,68 +644,56 @@ function reproducirSiguientePaso() {
   timerAnimacion = setTimeout(reproducirSiguientePaso, VELOCIDADES[nivel] || 700);
 }
 
-/**
- * Renderiza el estado de la simulación en el paso indicado.
- * NO hace scrollIntoView para no mover la página.
- *
- * @param {number} indice - Paso a mostrar (1-based)
- */
 function mostrarPaso(indice) {
   if (indice < 0 || indice > totalPasos) return;
   const esAvance = indice > pasoActual;
   pasoActual = indice;
 
-  // ── Calcular tiempo actual desde el mapeo de pasos ──
-  const tiempoActual = mapaPasosATiempos[Math.max(0, pasoActual - 1)] || 0;
+  const tiempoActual = mapaPasosATiempos[pasoActual] ?? 0;
 
-  // ── 1. Gantt ──
-  // Pasar tiempo actual en lugar de pasoActual para que muestre eventos hasta ese tiempo
   dibujarGantt(eventosGantt, procesos, pasoActual, false, vistaGantt, tiempoActual);
 
-  // ── 2. Mapa de memoria ──
-  if (estadosMemoria[pasoActual]) {
-    memoriaActual = JSON.parse(JSON.stringify(estadosMemoria[pasoActual]));
+  // Usar referencia directa al snapshot — evita deep copy innecesaria
+  const snapshot = estadosMemoria[pasoActual];
+  if (snapshot) {
+    memoriaActual = snapshot;
     renderizarMapaMemoria(memoriaActual, memoriaTotal, -1, true);
     renderizarLeyenda(memoriaActual);
-    actualizarSelectorLiberar(memoriaActual, 'selectLiberarProceso');
-    actualizarSelectorLiberar(memoriaActual, 'selectLiberarTablas');
   }
 
-  // ── 3. Métricas ──
-  // Usar tiempoActual en lugar de calcular desde eventosGantt
-  const procVis = procesosResultado.filter(p => p.fin !== undefined && p.fin <= tiempoActual);
-  if (procVis.length > 0) actualizarMetricasCPU(procVis, tiempoActual);
+  actualizarMetricasCPU(procesosResultado, tiempoActual, eventosGantt);
   const metMem = calcularMetricasMemoria(memoriaActual, memoriaTotal);
   actualizarMetricasMemoria(metMem, procesos.length);
 
-  // ── 4. Log de pasos de memoria ──
   if (esAvance) {
-    // Solo añadir el paso correspondiente a este índice
-    const pasoMem = pasosMem[pasoActual - 1];
-    if (pasoMem) agregarPasoLog(pasoMem, pasoActual);
-  } else {
-    // Retroceso: re-renderizar todo hasta aquí
-    rerenderizarLog(pasosMem, pasoActual - 1);
-  }
-
-  // ── 5. Lista de colas ──
-  const estadoCola = estadosCola[pasoActual - 1];
-  if (estadoCola) {
-    if (esAvance) {
-      agregarItemCola(estadoCola, pasoActual);
-    } else {
-      rerenderizarColas(estadosCola, pasoActual - 1);
+    if (pasoActual > 0 && limitePasosPorTick.length > pasoActual) {
+      const limite = limitePasosPorTick[pasoActual];
+      const inicio = limitePasosPorTick[pasoActual - 1];
+      for (let i = inicio; i < limite; i++) {
+        if (pasosMem[i]) agregarPasoLog(pasosMem[i], pasoActual);
+      }
     }
+  } else {
+    const hasta = (pasoActual > 0 && limitePasosPorTick[pasoActual] !== undefined)
+      ? limitePasosPorTick[pasoActual] - 1 : -1;
+    rerenderizarLog(pasosMem, hasta);
   }
 
-  // ── 6. Fragmentación ──
-  renderizarAnalisisFragmentacion(memoriaActual, memoriaTotal);
+  if (pasoActual > 0) {
+    const estadoCola = estadosCola[pasoActual];
+    if (estadoCola) {
+      if (esAvance) agregarItemCola(estadoCola, pasoActual);
+      else rerenderizarColas(estadosCola, pasoActual);
+    }
+  } else if (!esAvance) {
+    rerenderizarColas(estadosCola, -1);
+  }
 
-  // ── 7. Barra de progreso y contador ──
-  actualizarBarraProgreso((pasoActual / totalPasos) * 100);
-  document.getElementById('contadorPaso').textContent = `Paso ${pasoActual} / ${totalPasos} (t=${tiempoActual})`;
 
-  // ── SIN scrollIntoView — la página NO se mueve ──
+
+  actualizarBarraProgreso(totalPasos > 0 ? (pasoActual / totalPasos) * 100 : 0);
+  document.getElementById('contadorPaso').textContent =
+    `Paso ${pasoActual} / ${totalPasos}  (t = ${tiempoActual})`;
 }
 
 function actualizarBarraProgreso(pct) {
@@ -601,73 +702,8 @@ function actualizarBarraProgreso(pct) {
 }
 
 // ═══════════════════════════════════════════════════════
-// OPERACIONES DE MEMORIA (Liberar / Compactar)
-// ═══════════════════════════════════════════════════════
-function inicializarBotonesOperaciones() {
-  document.getElementById('btnLiberar')?.addEventListener('click',       () => ejecutarLiberar('selectLiberarProceso'));
-  document.getElementById('btnLiberarTablas')?.addEventListener('click', () => ejecutarLiberar('selectLiberarTablas'));
-  document.getElementById('btnCompactar')?.addEventListener('click',       ejecutarCompactar);
-  document.getElementById('btnCompactarTablas')?.addEventListener('click', ejecutarCompactar);
-}
-
-function ejecutarLiberar(idSel) {
-  const idProceso = document.getElementById(idSel)?.value;
-  if (!idProceso) { mostrarToast('Selecciona un proceso para liberar.', 'error'); return; }
-  if (!memoriaActual.length) { mostrarToast('Ejecuta la simulación primero.', 'error'); return; }
-  detenerAutoPlay();
-
-  let res;
-  if (algoMemActual === 'buddy') {
-    const pasos = [];
-    res = buddyLiberar(idProceso, memoriaActual, pasos);
-    pasos.forEach((p,i) => { pasosMem.push({ tipo:p.tipo, descripcion:p.descripcion }); agregarPasoLog({ tipo:p.tipo, descripcion:p.descripcion }, pasosMem.length); });
-  } else {
-    res = liberarProceso(idProceso, memoriaActual);
-    if (res.exito) { pasosMem.push({ tipo:'libre', descripcion:res.descripcion }); agregarPasoLog({ tipo:'libre', descripcion:res.descripcion }, pasosMem.length); }
-  }
-  if (!res.exito) { mostrarToast(res.descripcion, 'error'); return; }
-
-  actualizarVistaMemoria();
-  mostrarToast(`Proceso ${idProceso} liberado.`, 'info');
-}
-
-function ejecutarCompactar() {
-  if (!memoriaActual.length) { mostrarToast('Ejecuta la simulación primero.', 'error'); return; }
-  if (algoMemActual === 'buddy') { mostrarToast('Buddy System usa fusión de gemelos, no compactación.', 'info'); return; }
-  const fragExt = memoriaActual.filter(b => b.tipo === 'libre').reduce((s,b) => s+b.tamanio, 0);
-  if (fragExt === 0) { mostrarToast('No hay fragmentación externa que compactar.', 'info'); return; }
-  detenerAutoPlay();
-
-  const { nuevaMemoria, kbCompactados } = compactarMemoria(memoriaActual);
-  memoriaActual = nuevaMemoria;
-  const desc = `Compactación: ${kbCompactados}KB consolidados en un único bloque libre al final.`;
-  pasosMem.push({ tipo:'compact', descripcion:desc });
-  agregarPasoLog({ tipo:'compact', descripcion:desc }, pasosMem.length);
-
-  actualizarVistaMemoria();
-  mostrarToast(`Compactación completada. ${kbCompactados}KB consolidados.`, 'exito');
-}
-
-/** Actualiza todos los elementos visuales de memoria tras una operación manual. */
-function actualizarVistaMemoria() {
-  renderizarMapaMemoria(memoriaActual, memoriaTotal, -1, false);
-  renderizarLeyenda(memoriaActual);
-  actualizarSelectorLiberar(memoriaActual, 'selectLiberarProceso');
-  actualizarSelectorLiberar(memoriaActual, 'selectLiberarTablas');
-  const met = calcularMetricasMemoria(memoriaActual, memoriaTotal);
-  actualizarMetricasMemoria(met, procesos.length);
-  renderizarAnalisisFragmentacion(memoriaActual, memoriaTotal);
-}
-
-// ═══════════════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════════════
-let timerToast = null;
 function mostrarToast(msg, tipo = '') {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.className   = `visible ${tipo}`;
-  clearTimeout(timerToast);
-  timerToast = setTimeout(() => { el.className = ''; }, 3500);
+  window.crearToastGlobo(msg, tipo || 'info');
 }

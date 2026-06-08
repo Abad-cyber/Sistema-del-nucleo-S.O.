@@ -1,101 +1,100 @@
-# 🖥️ Simulador Unificado — Planificación CPU + Gestión de Memoria
+# SimuKernel — Simulador Unificado CPU + Memoria
 
-Simulador académico interactivo que une en una sola interfaz los algoritmos de planificación de CPU y de gestión de memoria, con visualización dinámica y sincronizada.
+Simulador académico interactivo que integra planificación de CPU y gestión de memoria, con visualización dinámica y sincronizada paso a paso.
 
 ---
 
-## 🚀 Cómo ejecutar
+## Requisitos
 
-> ⚠️ El proyecto usa módulos ES6 (`import/export`). **No abrir directamente** como archivo `file://`.
+Requiere servidor HTTP (módulos ES6). No abrir como `file://`.
 
-### Opción A — VS Code Live Server (recomendado)
-1. Abrir la carpeta `sim-unificado/` en VS Code.
-2. Instalar la extensión **Live Server** (Ritwick Dey) si no la tienes.
-3. Clic derecho en `index.html` → **Open with Live Server**.
-4. Se abre en `http://127.0.0.1:5500`.
-
-### Opción B — Python
 ```bash
-cd sim-unificado
-python -m http.server 8080
-# Abrir: http://localhost:8080
-```
+# Python
+cd sim-unificado && python -m http.server 8080
 
-### Opción C — Node.js
-```bash
+# Node.js
 npx serve sim-unificado
+
+# VS Code Live Server
+clic derecho en index.html → Open with Live Server
 ```
 
 ---
 
-## 📁 Estructura del proyecto
+## Algoritmos de CPU
+
+- **FCFS** — First Come, First Served (no expropiativo)
+- **SJF** — Shortest Job First (no expropiativo)
+- **RR** — Round Robin con quantum configurable
+- **SRT** — Shortest Remaining Time (expropiativo)
+
+## Algoritmos de Memoria
+
+- **First Fit** — Asigna en el primer hueco que cumple
+- **Best Fit** — Asigna en el hueco más ajustado
+- **Worst Fit** — Asigna en el hueco más grande
+- **Buddy System** — Asigna en bloques de tamaño potencia de 2 con splitting/merging
+
+## Políticas de Partición
+
+- **Dinámica** — Bloques variables según necesidad (FF/BF/WF/Buddy)
+- **Fija** — Particiones de tamaño fijo definidas por el usuario
+
+---
+
+## Formato de Entrada
+
+```
+P1, 0, 5, 50
+P2, 1, 3, 30
+```
+
+Columnas: `Nombre, Llegada, Ejecución, TamañoKB`
+
+Separadores: `,` `;` o tabulación. Líneas con `#` o `//` se ignoran.
+
+---
+
+## Funcionamiento
+
+1. **Página Parámetros** — Carga archivo CSV o edita la tabla manual. Selecciona algoritmos de CPU y memoria, quantum, memoria total, reserva para SO y política de particiones.
+
+2. **Página Gráfica** — Visualiza el diagrama de Gantt (CPU) y el mapa de memoria sincronizados. Navega paso a paso con Avanzar/Retroceder o usa AutoPlay.
+
+3. **Página Tablas** — Muestra métricas detalladas por proceso: tiempos de espera, retorno y respuesta (CPU), y asignación por partición con direcciones de inicio y fin (memoria).
+
+---
+
+## Estructura del Proyecto
 
 ```
 sim-unificado/
-├── index.html                        ← Interfaz principal (SPA de 3 páginas)
-├── README.md                         ← Este archivo
-├── css/
-│   └── estilos.css                   ← Sistema de diseño y estilos globales
-└── js/
-    ├── main.js                       ← Orquestador principal
-    ├── parser.js                     ← Parseo de CSV/TXT y tabla manual
-    ├── planificadores/
-    │   └── algoritmos.js             ← FCFS, SJF, Round Robin, SRT
-    ├── memoria/
-    │   └── algoritmos.js             ← First Fit, Best Fit, Worst Fit, Buddy System
-    └── ui/
-        ├── memRenderer.js            ← Mapa de memoria vertical
-        ├── ganttRenderer.js          ← Diagrama de Gantt (canvas HTML5)
-        ├── metricsRenderer.js        ← Stat-boxes y tablas de resultados
-        └── stepLog.js                ← Log narrativo de pasos de memoria
+├── index.html                     ← Página principal (3 vistas)
+├── css/estilos.css                ← Estilos completos (~770 líneas)
+├── js/
+│   ├── main.js                    ← Orquestador, eventos, simulación
+│   ├── parser.js                  ← Parseo de archivos y tabla manual
+│   ├── memoria/algoritmos.js      ← First/Best/Worst Fit, Buddy System
+│   ├── planificadores/algoritmos.js   ← FCFS, SJF, Round Robin, SRT
+│   └── ui/
+│       ├── memRenderer.js         ← Renderizado del mapa de memoria
+│       ├── ganttRenderer.js       ← Renderizado del diagrama de Gantt
+│       ├── metricsRenderer.js     ← Métricas, tablas de resultados
+│       └── stepLog.js             ← Log de pasos y colas de procesos
+├── procesos_5.txt .. _100.txt     ← Datos de prueba (5 a 100 procesos)
+└── README.md
 ```
 
 ---
 
-## 📋 Formato del archivo de entrada
+## Notas Técnicas
 
-```
-proceso, llegada, ejecucion, tamaño_KB
-P1, 0, 5, 50
-P2, 1, 3, 5
-P3, 2, 8, 80
-P4, 3, 2, 15
-P5, 4, 5, 50
-P6, 5, 12, 200
-```
-
-- Separadores: coma `,`, punto y coma `;` o tabulación.
-- Las líneas que empiezan con `#` o `//` son comentarios (se ignoran).
-- El encabezado es opcional.
+- **Buddy System** requiere que la memoria libre inicial sea potencia de 2. Si no lo es, se redondea hacia abajo y se notifica en consola.
+- Las particiones fijas se definen como lista separada por comas (ej: `100,200,50`).
+- La simulación puede inspeccionarse paso a paso en la vista Gráfica.
 
 ---
 
-## ⚙️ Algoritmos implementados
+## Licencia
 
-### Planificación de CPU
-| Algoritmo | Tipo | Descripción |
-|-----------|------|-------------|
-| FCFS | No expulsivo | Orden de llegada |
-| SJF  | No expulsivo | Menor ráfaga primero |
-| RR   | Expulsivo    | Quantum configurable |
-| SRT  | Expulsivo    | SJF con expulsión en cada tick |
-
-### Gestión de Memoria
-| Algoritmo   | Descripción |
-|-------------|-------------|
-| First Fit   | Primer hueco suficiente |
-| Best Fit    | Hueco más pequeño suficiente |
-| Worst Fit   | Hueco más grande disponible |
-| Buddy System| Potencias de 2, fusión de gemelos |
-
----
-
-## 🖱️ Uso de la interfaz
-
-1. **Parámetros**: Cargar archivo o editar la tabla de procesos. Seleccionar algoritmos y configurar parámetros. Pulsar **Ejecutar Simulación**.
-2. **Gráfica**: Ver el diagrama de Gantt y el mapa de memoria animados y sincronizados. Usar los controles de velocidad, pausa y paso a paso.
-3. **Tablas**: Ver las tablas completas de métricas de CPU y de gestión de memoria.
-
----
-
-## ⚙️ Algoritmos implementados
+Uso académico. Proyecto educativo para la materia de Sistemas Operativos.

@@ -1,177 +1,193 @@
-// ═══════════════════════════════════════════════════════
 // ui/memRenderer.js — Renderizador del mapa de memoria vertical
-// Dibuja los bloques de memoria: SO arriba, procesos y huecos hacia abajo
-// ═══════════════════════════════════════════════════════
+// Rediseño: colores claros para bloques libres, gradientes vivos para procesos
+// Optimizado: usa DocumentFragment para evitar reflows por bloque
 
-/**
- * Renderiza el mapa de memoria en el contenedor #mapaMemo.
- * Los bloques se apilan verticalmente: SO arriba, el resto hacia abajo.
- * La altura de cada bloque es proporcional a su tamaño en KB.
- *
- * @param {Array}  bloques      - Estado actual de la memoria
- * @param {number} memoriaTotal - KB totales (para calcular proporciones)
- * @param {number} indiceResaltado - Índice del bloque a resaltar (-1 = ninguno)
- * @param {boolean} animar      - Si debe animar el bloque resaltado
- */
+export const PALETA_GRADIENTES = [
+  ['#059669','#34d399'],
+  ['#0891b2','#22d3ee'],
+  ['#d97706','#fbbf24'],
+  ['#dc2626','#f87171'],
+  ['#0d7ea8','#38bdf8'],
+  ['#db2777','#f472b6'],
+  ['#65a30d','#a3e635'],
+  ['#0284c7','#60a5fa'],
+  ['#ea580c','#fb923c'],
+  ['#0d9488','#2dd4bf'],
+];
+
+export const PALETA_SOLIDA = PALETA_GRADIENTES.map(p => p[0]);
+
+const mapaGradientes = new Map();
+let contadorGrad = 0;
+
+export function obtenerColorSolido(id) {
+  if (!mapaGradientes.has(id)) {
+    mapaGradientes.set(id, contadorGrad % PALETA_GRADIENTES.length);
+    contadorGrad++;
+  }
+  return PALETA_SOLIDA[mapaGradientes.get(id)];
+}
+
+function obtenerGradienteCSS(id) {
+  if (!mapaGradientes.has(id)) {
+    mapaGradientes.set(id, contadorGrad % PALETA_GRADIENTES.length);
+    contadorGrad++;
+  }
+  const [c1, c2] = PALETA_GRADIENTES[mapaGradientes.get(id)];
+  return `linear-gradient(135deg,${c1},${c2})`;
+}
+
+export function resetColoresMemoria() {
+  mapaGradientes.clear();
+  contadorGrad = 0;
+}
+
 export function renderizarMapaMemoria(bloques, memoriaTotal, indiceResaltado = -1, animar = false) {
   const contenedor = document.getElementById('mapaMemo');
   if (!contenedor) return;
 
-  // Altura total del contenedor proporcional a la cantidad de bloques
-  const alturaContenedor = Math.max(400, bloques.length * 52);
+  const alturaContenedor = Math.max(460, bloques.length * 56);
   contenedor.style.height = alturaContenedor + 'px';
-  contenedor.innerHTML = '';
+
+  const fragment = document.createDocumentFragment();
 
   bloques.forEach((bloque, indice) => {
-    // Calcular altura proporcional al tamaño del bloque
     const porcentaje = (bloque.tamanio / memoriaTotal) * 100;
-    const alturaMin  = 36; // altura mínima para que se pueda leer
+    const alturaMin  = 40;
     const altura     = Math.max(alturaMin, (porcentaje / 100) * alturaContenedor);
 
-    // Color del bloque según su tipo
-    const colorFondo = bloque.tipo === 'so'
-      ? 'var(--color-so)'
-      : bloque.tipo === 'libre'
-        ? 'var(--color-libre)'
-        : bloque.color;
+    let colorFondo;
+    if (bloque.tipo === 'so') {
+      colorFondo = 'linear-gradient(135deg,#334155,#1e293b)';
+    } else if (bloque.tipo === 'libre') {
+      colorFondo = 'linear-gradient(135deg,#f0f4f8,#e2e8f0)';
+    } else {
+      colorFondo = obtenerGradienteCSS(bloque.id);
+    }
 
-    // Crear el elemento del bloque
     const elBloque = document.createElement('div');
     elBloque.className = 'bloque-mem';
+
+    const borderStyle = bloque.tipo === 'libre'
+      ? 'border: 1.5px dashed #cbd5e1;'
+      : '';
+
     elBloque.style.cssText = `
       background: ${colorFondo};
       height: ${altura}px;
       flex-shrink: 0;
+      ${borderStyle}
     `;
     elBloque.setAttribute('data-indice', indice);
 
-    // Resaltado del bloque activo (el que se está asignando en este paso)
     if (indice === indiceResaltado) {
       elBloque.classList.add('resaltado');
       if (animar) elBloque.classList.add('entrando');
     }
 
-    // Determinar si hay espacio suficiente para mostrar texto
-    const mostrarCompleto = altura >= 52;
-    const mostrarMinimo   = altura >= 34;
+    const mostrarCompleto = altura >= 58;
+    const mostrarMinimo   = altura >= 38;
 
-    // Etiqueta del tipo de bloque
-    const etiquetaTipo = bloque.tipo === 'so'
-      ? 'S.O.'
-      : bloque.tipo === 'libre'
-        ? 'Libre'
-        : bloque.id;
+    const esLibre = bloque.tipo === 'libre';
+    const esSO    = bloque.tipo === 'so';
 
-    // Construir HTML interno del bloque
+    const etiquetaTipo = esSO ? 'S.O.' : esLibre ? 'Libre' : bloque.id;
+    const textColor    = esLibre ? '#64748b' : '#fff';
+    const textShadow   = esLibre ? 'none' : '0 1px 4px rgba(0,0,0,.4)';
+
     let htmlInterno = '';
     if (mostrarMinimo) {
-      htmlInterno += `<div class="bloque-nombre">${etiquetaTipo}</div>`;
+      htmlInterno += `
+        <div class="bloque-nombre" style="font-size:${altura > 80 ? 18 : 14}px;color:${textColor};text-shadow:${textShadow}">
+          ${esc(etiquetaTipo)}
+        </div>
+      `;
     }
     if (mostrarCompleto) {
-      htmlInterno += `<div class="bloque-tamanio">${bloque.tamanio}KB</div>`;
+      htmlInterno += `
+        <div class="bloque-tamanio" style="color:${esLibre ? '#64748b' : 'rgba(255,255,255,.9)'}">
+          ${bloque.tamanio}KB
+        </div>
+      `;
       if (bloque.inicio !== undefined) {
-        htmlInterno += `<div class="bloque-rango">${bloque.inicio}K — ${bloque.inicio + bloque.tamanio - 1}K</div>`;
+        htmlInterno += `
+          <div class="bloque-rango" style="color:${esLibre ? '#94a3b8' : 'rgba(255,255,255,.7)'}">
+            ${bloque.inicio}K\u2013${bloque.inicio + bloque.tamanio - 1}K
+          </div>
+        `;
       }
-      // Mostrar fragmentación interna si existe
       if (bloque.tipo === 'proceso' && bloque.fragmentacionInterna > 0) {
         htmlInterno += `<div class="bloque-frag">Frag: ${bloque.fragmentacionInterna}KB</div>`;
       }
     }
 
-    // Tooltip al pasar el mouse
-    const tipoLabel = bloque.tipo === 'so'
-      ? 'Sistema Operativo'
-      : bloque.tipo === 'libre'
-        ? 'Libre'
-        : 'Proceso';
-
+    const tipoLabel = esSO ? 'Sistema Operativo' : esLibre ? 'Libre' : 'Proceso';
     htmlInterno += `
       <div class="bloque-tooltip">
-        <strong>${etiquetaTipo}</strong><br/>
-        Tipo: ${tipoLabel}<br/>
-        Tamaño: ${bloque.tamanio}KB<br/>
+        <strong>${esc(etiquetaTipo)}</strong><br/>
+        Tipo: ${esc(tipoLabel)}<br/>
+        Tama\u00f1o: ${bloque.tamanio}KB<br/>
         Dir. inicio: ${bloque.inicio}KB<br/>
-        Dir. fin: ${bloque.inicio + bloque.tamanio - 1}KB
+        Dir. fin: ${bloque.inicio + (bloque.tamanioParticion || bloque.tamanio) - 1}KB
         ${bloque.tipo === 'proceso' && bloque.fragmentacionInterna > 0
           ? `<br/>Frag. interna: ${bloque.fragmentacionInterna}KB`
           : ''}
         ${bloque.tipo === 'proceso' && bloque.tamanioParticion
-          ? `<br/>Partición: ${bloque.tamanioParticion}KB`
+          ? `<br/>Partici\u00f3n: ${bloque.tamanioParticion}KB`
           : ''}
       </div>
     `;
 
     elBloque.innerHTML = htmlInterno;
-    contenedor.appendChild(elBloque);
+    fragment.appendChild(elBloque);
   });
 
-  // Actualizar subtítulo con info rápida
+  contenedor.replaceChildren(fragment);
+
   const subTitulo = document.getElementById('subtituloMem');
   if (subTitulo) {
-    subTitulo.textContent = `${memoriaTotal}KB · ${bloques.length} bloque(s)`;
+    subTitulo.textContent = `${memoriaTotal}KB \u00b7 ${bloques.length} bloque(s)`;
   }
 }
 
-/**
- * Renderiza la leyenda del mapa de memoria.
- * Muestra un punto de color y nombre por cada proceso + SO + Libre.
- *
- * @param {Array} bloques - Estado actual de la memoria
- */
 export function renderizarLeyenda(bloques) {
   const contenedorLeyenda = document.getElementById('leyendaMem');
   if (!contenedorLeyenda) return;
 
   contenedorLeyenda.innerHTML = '';
-
-  // Mapa para no repetir entradas de la misma categoría
   const entradas = {};
 
   bloques.forEach(bloque => {
-    const clave = bloque.tipo === 'so'
-      ? 'SO'
-      : bloque.tipo === 'libre'
-        ? 'Libre'
-        : bloque.id;
-
-    if (entradas[clave]) return; // Ya fue añadida
+    const clave = bloque.tipo === 'so' ? 'SO' : bloque.tipo === 'libre' ? 'Libre' : bloque.id;
+    if (entradas[clave]) return;
     entradas[clave] = true;
 
-    const colorPunto = bloque.tipo === 'so'
-      ? 'var(--color-so)'
-      : bloque.tipo === 'libre'
-        ? 'var(--color-libre)'
-        : bloque.color;
+    let colorPunto;
+    if (bloque.tipo === 'so') {
+      colorPunto = '#334155';
+    } else if (bloque.tipo === 'libre') {
+      colorPunto = '#cbd5e1';
+    } else {
+      const grad = obtenerGradienteCSS(bloque.id);
+      const match = grad.match(/#[0-9a-f]{6}/i);
+      colorPunto = match ? match[0] : '#4f46e5';
+    }
 
     const item = document.createElement('div');
     item.className = 'leyenda-item';
     item.innerHTML = `
-      <div class="leyenda-punto" style="background:${colorPunto}"></div>
-      ${clave}
+      <div class="leyenda-punto" style="background:${colorPunto};box-shadow:0 1px 3px ${colorPunto}55"></div>
+      ${esc(clave)}
     `;
     contenedorLeyenda.appendChild(item);
   });
 }
 
-/**
- * Actualiza el selector de procesos para liberar memoria.
- * Solo muestra los procesos actualmente asignados en memoria.
- *
- * @param {Array}  bloques    - Estado actual de la memoria
- * @param {string} selectorId - ID del elemento <select>
- */
-export function actualizarSelectorLiberar(bloques, selectorId) {
-  const selector = document.getElementById(selectorId);
-  if (!selector) return;
-
-  selector.innerHTML = '<option value="">Liberar proceso...</option>';
-
-  bloques
-    .filter(b => b.tipo === 'proceso')
-    .forEach(b => {
-      const opcion = document.createElement('option');
-      opcion.value       = b.id;
-      opcion.textContent = `${b.id} (${b.tamanio}KB)`;
-      selector.appendChild(opcion);
-    });
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }

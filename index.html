@@ -3,205 +3,251 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Simulador SO — CPU + Memoria</title>
+  <title>SimuKernel — Simulador S.O.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/estilos.css"/>
 </head>
 <body>
 
+<div id="toastZone" class="toast-zone"></div>
+
 <div class="contenedor-app">
 
-  <!-- ═══ SIDEBAR ═══ -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-titulo">
-      <span class="sidebar-nombre">Configuración</span>
-      <span class="sidebar-version">Kernel v4.12-x86_64</span>
+      <div class="sidebar-logo-wrap">
+        <div class="sidebar-logo-icon" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+            <rect x="9" y="9" width="6" height="6"/>
+            <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+            <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+            <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+            <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+          </svg>
+        </div>
+        <div class="sidebar-textos">
+          <span class="sidebar-nombre">SimuKernel</span>
+          <span class="sidebar-version">v4.0 · CPU + MEM</span>
+        </div>
+      </div>
     </div>
     <div class="sidebar-separador"></div>
-    <nav class="sidebar-nav">
-      <button class="nav-item activo" data-pagina="parametros">
-        <span class="nav-icono">⊞</span>
-        <span class="nav-texto">Parámetros</span>
+
+    <nav class="sidebar-nav" aria-label="Navegaci&oacute;n principal">
+      <button class="nav-item activo" data-pagina="parametros" data-tooltip="Par&aacute;metros" aria-label="Ir a par&aacute;metros">
+        <span class="nav-icono" aria-hidden="true">&#x2699;</span>
+        <span class="nav-texto">Par&aacute;metros</span>
       </button>
-      <button class="nav-item" data-pagina="grafica">
-        <span class="nav-icono">◈</span>
-        <span class="nav-texto">Gráfica</span>
+      <button class="nav-item" data-pagina="grafica" data-tooltip="Gr&aacute;fica" aria-label="Ir a gr&aacute;fica">
+        <span class="nav-icono" aria-hidden="true">&#x25B3;</span>
+        <span class="nav-texto">Gr&aacute;fica</span>
       </button>
-      <button class="nav-item" data-pagina="tablas">
-        <span class="nav-icono">⊟</span>
+      <button class="nav-item" data-pagina="tablas" data-tooltip="Tablas" aria-label="Ir a tablas">
+        <span class="nav-icono" aria-hidden="true">&#x25A8;</span>
         <span class="nav-texto">Tablas</span>
       </button>
     </nav>
+
     <div class="sidebar-footer">
-      <button class="btn-ejecutar-sidebar" id="btnEjecutarSidebar">
-        <span id="iconoEjecutar">▶</span>
-        <span id="textoEjecutar">Ejecutar Simulación</span>
+      <button class="btn-ejecutar-sidebar" id="btnEjecutarSidebar" data-tooltip="Ejecutar Simulaci&oacute;n" aria-label="Ejecutar simulaci&oacute;n">
+        <span class="btn-ej-icono" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+        </span>
+        <span class="btn-ej-texto" id="textoEjecutar">Ejecutar Simulaci&oacute;n</span>
       </button>
     </div>
   </aside>
 
-  <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
   <main class="contenido-principal">
 
-    <!-- Header fijo -->
     <header class="app-header">
       <div class="header-izq">
         <span class="header-chip">SO</span>
-        <h1 class="header-titulo">Simulador del nucleo S.O</h1>
+        <h1 class="header-titulo">Simulador del <span class="grad-text">N&uacute;cleo S.O.</span></h1>
       </div>
       <div class="header-der">
-        <span class="algo-pill" id="pillCPU">CPU: —</span>
-        <span class="algo-pill" id="pillMem">MEM: —</span>
+        <span class="algo-pill" id="pillCPU">
+          <span class="pill-pulse"></span>CPU: &mdash;
+        </span>
+        <span class="algo-pill" id="pillMem">
+          <span class="pill-pulse" style="background:#f59e0b"></span>MEM: &mdash;
+        </span>
       </div>
     </header>
 
-    <!-- ══════════════════════════════════
-         PÁGINA 1: PARÁMETROS
-    ═══════════════════════════════════ -->
-    <section class="pagina activa" id="paginaParametros">
+    <!-- ════ PÁGINA 1: PARÁMETROS ════ -->
+    <section class="pagina activa visito" id="paginaParametros" aria-label="P&aacute;gina de par&aacute;metros">
 
-      <!-- Card: Carga de trabajo -->
-      <div class="card">
+      <div class="page-intro">
+        <div class="page-intro-num">01</div>
+        <div>
+          <div class="page-intro-title">Configuraci&oacute;n de Simulaci&oacute;n</div>
+          <div class="page-intro-sub">Define los procesos y selecciona los algoritmos de planificaci&oacute;n</div>
+        </div>
+      </div>
+
+      <div class="card card-accent-teal">
         <div class="card-header">
-          <div class="dot"></div>
           <h2>Carga de Trabajo</h2>
         </div>
         <div class="card-body">
           <div class="grilla-config">
-
-            <!-- Columna izquierda: archivo -->
             <div class="col-izq">
-              <span class="etiqueta-campo">Archivo de procesos (.csv / .txt)</span>
-              <div class="zona-arrastre" id="zonaArrastre">
-                <input type="file" id="inputArchivo" accept=".csv,.txt"/>
-                <div class="za-texto">Arrastra tu archivo aquí o <strong>haz clic</strong><br/><small>proceso, llegada, ejecucion, tamaño_KB</small></div>
+              <span class="etiqueta-campo" id="labelArchivo">Archivo de procesos (.csv / .txt)</span>
+              <div class="zona-arrastre" id="zonaArrastre" role="button" tabindex="0" aria-labelledby="labelArchivo">
+                <input type="file" id="inputArchivo" accept=".csv,.txt" aria-label="Seleccionar archivo de procesos"/>
+                <div class="za-inner">
+                  <div class="za-icon-wrap" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </div>
+                  <div class="za-texto">Arrastra tu archivo aqu&iacute; o <strong>haz clic</strong></div>
+                  <div class="za-sub">proceso, llegada, ejecucion, tama&ntilde;o_KB</div>
+                </div>
                 <div class="za-nombre" id="nombreArchivo">Sin archivo seleccionado</div>
               </div>
               <div class="hint-formato">
                 <div class="hint-titulo">Formato del archivo</div>
-                <code>proceso, llegada, ejecucion, tamaño_KB</code>
+                <code>proceso, llegada, ejecucion, tama&ntilde;o_KB</code>
                 <code>P1, 0, 5, 50</code>
-                <code>P2, 1, 3, 5</code>
-                <code># Líneas con # son comentarios</code>
+                <code>P2, 1, 3, 30</code>
+                <code># L&iacute;neas con # son comentarios</code>
               </div>
             </div>
-
-            <!-- Columna derecha: tabla manual -->
             <div class="col-der">
-              <span class="etiqueta-campo">Procesos (edición manual)</span>
+              <span class="etiqueta-campo" id="labelTabla">Procesos (edici&oacute;n manual)</span>
               <div class="tabla-procesos-wrap">
-                <table id="tablaEntrada">
-                  <thead>
-                    <tr>
-                      <th>Proceso</th><th>Llegada</th><th>Ejecución</th><th>Tamaño (KB)</th><th></th>
-                    </tr>
-                  </thead>
+                <table id="tablaEntrada" aria-labelledby="labelTabla">
+                  <thead><tr>
+                    <th scope="col">Proceso</th><th scope="col">Llegada</th><th scope="col">Ejecuci&oacute;n</th><th scope="col">Tama&ntilde;o (KB)</th><th scope="col"></th>
+                  </tr></thead>
                   <tbody id="cuerpoTablaEntrada"></tbody>
                 </table>
-                
               </div>
-              <button class="btn-agregar-fila" id="btnAgregarFila">+ Agregar proceso</button>
+              <button class="btn-agregar-fila" id="btnAgregarFila" aria-label="Agregar nueva fila de proceso">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar proceso
+              </button>
             </div>
-
           </div>
         </div>
       </div>
 
-      <!-- Card: Algoritmos -->
-      <div class="card">
+      <div class="card card-accent-violet">
         <div class="card-header">
-          <div class="dot"></div>
-          <h2>Configuración de Algoritmos</h2>
+          <h2>Configuraci&oacute;n de Algoritmos</h2>
         </div>
         <div class="card-body">
           <div class="grilla-algoritmos">
 
-            <!-- CPU -->
             <div class="grupo-algo">
               <span class="etiqueta-campo">Planificador de CPU</span>
-              <div class="lista-algo">
+              <div class="lista-algo" role="radiogroup" aria-label="Algoritmo de CPU">
                 <label class="tarjeta-algo seleccionado" id="cardFCFS">
                   <input type="radio" name="algoCPU" value="fcfs" checked/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">FCFS — First Come First Served</div><div class="algo-desc">No expulsivo · Orden de llegada</div></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">FCFS</div>
+                    <div class="algo-desc">First Come First Served &middot; No expulsivo</div>
+                  </div>
                   <span class="algo-etiqueta">No expulsivo</span>
                 </label>
                 <label class="tarjeta-algo" id="cardSJF">
                   <input type="radio" name="algoCPU" value="sjf"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">SJF — Shortest Job First</div><div class="algo-desc">No expulsivo · Menor ráfaga primero</div></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">SJF</div>
+                    <div class="algo-desc">Shortest Job First &middot; Menor r&aacute;faga primero</div>
+                  </div>
                   <span class="algo-etiqueta">No expulsivo</span>
                 </label>
                 <label class="tarjeta-algo" id="cardRR">
                   <input type="radio" name="algoCPU" value="rr"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">RR — Round Robin</div><div class="algo-desc">Expulsivo · Quantum configurable</div></div>
-                  <span class="algo-etiqueta">Expulsivo</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">RR</div>
+                    <div class="algo-desc">Round Robin &middot; Quantum configurable</div>
+                  </div>
+                  <span class="algo-etiqueta exp">Expulsivo</span>
                 </label>
                 <label class="tarjeta-algo" id="cardSRT">
                   <input type="radio" name="algoCPU" value="srt"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">SRT — Shortest Remaining Time</div><div class="algo-desc">Expulsivo · SJF con expulsión</div></div>
-                  <span class="algo-etiqueta">Expulsivo</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">SRT</div>
+                    <div class="algo-desc">Shortest Remaining Time &middot; SJF con expulsi&oacute;n</div>
+                  </div>
+                  <span class="algo-etiqueta exp">Expulsivo</span>
                 </label>
               </div>
               <div class="caja-quantum inactivo" id="cajaQuantum">
                 <span class="quantum-etiqueta">Quantum (RR)</span>
                 <div class="quantum-control">
-                  <button class="btn-quantum" id="btnQuantumMenos">−</button>
-                  <input type="number" id="inputQuantum" value="2" min="1" max="99"/>
-                  <button class="btn-quantum" id="btnQuantumMas">+</button>
+                  <button class="btn-quantum" id="btnQuantumMenos" aria-label="Reducir quantum">&minus;</button>
+                  <input type="number" id="inputQuantum" value="2" min="1" max="99" aria-label="Valor del quantum"/>
+                  <button class="btn-quantum" id="btnQuantumMas" aria-label="Aumentar quantum">+</button>
                 </div>
               </div>
             </div>
 
-            <!-- Memoria -->
             <div class="grupo-algo">
               <span class="etiqueta-campo">Algoritmo de Memoria</span>
-              <div class="lista-algo">
+              <div class="lista-algo" role="radiogroup" aria-label="Algoritmo de memoria">
                 <label class="tarjeta-algo seleccionado" id="cardFF">
                   <input type="radio" name="algoMem" value="ff" checked/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">First Fit — Primer Ajuste</div><div class="algo-desc">Asigna el primer hueco suficiente</div></div>
-                  <span class="algo-etiqueta">Rápido</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">First Fit</div>
+                    <div class="algo-desc">Primer Ajuste &middot; Primer hueco suficiente</div>
+                  </div>
+                  <span class="algo-etiqueta mem">R&aacute;pido</span>
                 </label>
                 <label class="tarjeta-algo" id="cardBF">
                   <input type="radio" name="algoMem" value="bf"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">Best Fit — Mejor Ajuste</div><div class="algo-desc">Asigna el hueco más pequeño suficiente</div></div>
-                  <span class="algo-etiqueta">Preciso</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Best Fit</div>
+                    <div class="algo-desc">Mejor Ajuste &middot; Hueco m&aacute;s peque&ntilde;o suficiente</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Preciso</span>
                 </label>
                 <label class="tarjeta-algo" id="cardWF">
                   <input type="radio" name="algoMem" value="wf"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">Worst Fit — Peor Ajuste</div><div class="algo-desc">Asigna el hueco más grande</div></div>
-                  <span class="algo-etiqueta">Heurístico</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Worst Fit</div>
+                    <div class="algo-desc">Peor Ajuste &middot; Hueco m&aacute;s grande disponible</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Heur&iacute;stico</span>
                 </label>
                 <label class="tarjeta-algo" id="cardBuddy">
                   <input type="radio" name="algoMem" value="buddy"/>
                   <div class="radio-anillo"></div>
-                  <div class="algo-info"><div class="algo-nombre">Buddy System — Gemelos</div><div class="algo-desc">Potencias de 2 · Fusión de gemelos</div></div>
-                  <span class="algo-etiqueta">Potencias 2</span>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Buddy System</div>
+                    <div class="algo-desc">Potencias de 2 &middot; Fusi&oacute;n de gemelos</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Potencias 2</span>
                 </label>
               </div>
               <div class="grilla-params-mem">
                 <div class="grupo-input">
-                  <label class="inp-etiqueta">Memoria total (KB)</label>
+                  <label class="inp-etiqueta" for="memoriaTotal">Memoria total (KB)</label>
                   <input type="number" class="inp-campo" id="memoriaTotal" value="400" min="64"/>
                 </div>
                 <div class="grupo-input">
-                  <label class="inp-etiqueta">SO reservado (KB)</label>
+                  <label class="inp-etiqueta" for="memoriaSOReservado">SO reservado (KB)</label>
                   <input type="number" class="inp-campo" id="memoriaSOReservado" value="0" min="0"/>
                 </div>
               </div>
-              <span class="etiqueta-campo" style="margin-top:14px"> Política de partición</span>
-              <div class="fila-politica">
-                <button class="btn-politica activo" data-politica="dinamica" id="polDinamica">Dinámica</button>
-                <button class="btn-politica" data-politica="fija" id="polFija">Fija</button>
+              <span class="etiqueta-campo" style="margin-top:14px">Pol&iacute;tica de partici&oacute;n</span>
+              <div class="fila-politica" role="radiogroup" aria-label="Pol&iacute;tica de partici&oacute;n">
+                <button class="btn-politica activo" data-politica="dinamica" id="polDinamica" aria-pressed="true">Din&aacute;mica</button>
+                <button class="btn-politica" data-politica="fija" id="polFija" aria-pressed="false">Fija</button>
               </div>
               <div class="config-fija oculto" id="configParticionesFijas">
-                <label class="inp-etiqueta">Tamaños de particiones (KB, separados por coma)</label>
+                <label class="inp-etiqueta" for="particionesFijas">Tama&ntilde;os de particiones (KB, separados por coma)</label>
                 <input type="text" class="inp-campo" id="particionesFijas" value="100,100,100,100"/>
               </div>
             </div>
@@ -212,26 +258,32 @@
 
     </section>
 
-    <!-- ══════════════════════════════════
-         PÁGINA 2: GRÁFICA
-    ═══════════════════════════════════ -->
-    <section class="pagina" id="paginaGrafica">
+    <!-- ════ PÁGINA 2: GRÁFICA ════ -->
+    <section class="pagina" id="paginaGrafica" aria-label="P&aacute;gina de gr&aacute;fica">
 
+      <div id="graficaEmpty" class="empty-state">
+        <div class="empty-state-icon"><svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="26" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 4" fill="none"/><path d="M16 30c0-4.418 3.582-8 8-8l2-6h4l2 6c4.418 0 8 3.582 8 8" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M28 22v-6m0 0h-4m4 0h4" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><circle cx="22" cy="32" r="2" fill="#cbd5e1"/><circle cx="36" cy="32" r="2" fill="#cbd5e1"/><path d="M22 36c0 0 2 4 6 4s6-4 6-4" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="empty-state-title">A&uacute;n no hay simulaci&oacute;n</div>
+        <div class="empty-state-desc">
+          Configura los procesos y algoritmos en la p&aacute;gina de Par&aacute;metros,
+          luego pulsa <strong>Ejecutar Simulaci&oacute;n</strong> para ver los resultados aqu&iacute;.
+        </div>
+      </div>
+
+      <div id="graficaContenido" class="oculto">
       <div class="card">
         <div class="card-header">
-          <div class="dot"></div>
-          <h2>Resultados y Visualización</h2>
+          <h2>Resultados y Visualizaci&oacute;n</h2>
           <div class="card-header-der">
-            <!-- Controles animación -->
             <div class="controles-sim">
-              <button class="btn-ctrl" id="btnPasoAnterior">◀</button>
-              <button class="btn-ctrl activo" id="btnPlayPausa">▶ Auto</button>
-              <button class="btn-ctrl" id="btnPasoSiguiente">▶|</button>
-              <button class="btn-reiniciar" id="btnReiniciar">↺ Reiniciar</button>
+              <button class="btn-ctrl" id="btnPasoAnterior" title="Paso anterior" aria-label="Paso anterior">&#9664;</button>
+              <button class="btn-ctrl activo" id="btnPlayPausa" aria-label="Reproducir o pausar">&#9654; Auto</button>
+              <button class="btn-ctrl" id="btnPasoSiguiente" title="Siguiente" aria-label="Paso siguiente">&#9654;|</button>
+              <button class="btn-reiniciar" id="btnReiniciar" aria-label="Reiniciar simulaci&oacute;n">&#8634; Reiniciar</button>
             </div>
             <div class="control-velocidad">
-              <label>Vel.</label>
-              <input type="range" id="sliderVelocidad" min="1" max="5" value="3"/>
+              <label for="sliderVelocidad">Vel.</label>
+              <input type="range" id="sliderVelocidad" min="1" max="5" value="3" aria-label="Velocidad de animaci&oacute;n"/>
               <span id="textoVelocidad">Normal</span>
             </div>
           </div>
@@ -239,117 +291,120 @@
 
         <div class="card-body sin-padding">
 
-          <!-- Métricas CPU + Memoria -->
           <div class="fila-metricas" id="filaMetricas">
             <div class="grupo-metricas">
-              <div class="metricas-titulo">CPU</div>
+              <div class="metricas-titulo">Memoria</div>
               <div class="metricas-grid">
-                <div class="caja-metrica" id="cmUsoCPU"><div class="cm-etiqueta">Uso de CPU</div><div class="cm-valor" id="mvUsoCPU">—</div></div>
-                <div class="caja-metrica" id="cmTEPromedio"><div class="cm-etiqueta">TE Promedio</div><div class="cm-valor" id="mvTEPromedio">—</div></div>
-                <div class="caja-metrica" id="cmTRPromedio"><div class="cm-etiqueta">TR Promedio</div><div class="cm-valor" id="mvTRPromedio">—</div></div>
-                <div class="caja-metrica" id="cmThroughput"><div class="cm-etiqueta">Throughput</div><div class="cm-valor" id="mvThroughput">—</div></div>
+                <div class="caja-metrica" id="cmUsoMem"><div class="cm-etiqueta">% Uso Memoria</div><div class="cm-valor" id="mvUsoMem">&mdash;</div></div>
+                <div class="caja-metrica" id="cmMemLibre"><div class="cm-etiqueta">Memoria Libre</div><div class="cm-valor" id="mvMemLibre">&mdash;</div></div>
+                <div class="caja-metrica" id="cmFragInt"><div class="cm-etiqueta">Frag. Interna</div><div class="cm-valor" id="mvFragInt">&mdash;</div></div>
+                <div class="caja-metrica" id="cmFragExt"><div class="cm-etiqueta">Frag. Externa</div><div class="cm-valor" id="mvFragExt">&mdash;</div></div>
+                <div class="caja-metrica" id="cmProcMem"><div class="cm-etiqueta">Asignados / Total</div><div class="cm-valor" id="mvProcMem">&mdash;</div></div>
               </div>
             </div>
             <div class="divisor-metricas"></div>
             <div class="grupo-metricas">
-              <div class="metricas-titulo">Memoria</div>
+              <div class="metricas-titulo">CPU</div>
               <div class="metricas-grid">
-                <div class="caja-metrica" id="cmUsoMem"><div class="cm-etiqueta">% Uso Memoria</div><div class="cm-valor" id="mvUsoMem">—</div></div>
-                <div class="caja-metrica" id="cmFragInt"><div class="cm-etiqueta">Frag. Interna</div><div class="cm-valor" id="mvFragInt">—</div></div>
-                <div class="caja-metrica" id="cmFragExt"><div class="cm-etiqueta">Frag. Externa</div><div class="cm-valor" id="mvFragExt">—</div></div>
-                <div class="caja-metrica" id="cmProcMem"><div class="cm-etiqueta">Asignados / Total</div><div class="cm-valor" id="mvProcMem">—</div></div>
+                <div class="caja-metrica" id="cmTotalProc"><div class="cm-etiqueta">Total Procesos</div><div class="cm-valor" id="mvTotalProc">&mdash;</div></div>
+                <div class="caja-metrica" id="cmUsoCPU"><div class="cm-etiqueta">Uso de CPU</div><div class="cm-valor" id="mvUsoCPU">&mdash;</div></div>
+                <div class="caja-metrica" id="cmTEPromedio"><div class="cm-etiqueta">TE Promedio</div><div class="cm-valor" id="mvTEPromedio">&mdash;</div></div>
+                <div class="caja-metrica" id="cmTRPromedio"><div class="cm-etiqueta">TR Promedio</div><div class="cm-valor" id="mvTRPromedio">&mdash;</div></div>
+                <div class="caja-metrica" id="cmThroughput"><div class="cm-etiqueta">Throughput</div><div class="cm-valor" id="mvThroughput">&mdash;</div></div>
               </div>
             </div>
           </div>
 
-          <!-- Barra de progreso -->
           <div class="barra-progreso"><div class="barra-progreso-fill" id="barraProgresoFill"></div></div>
           <div class="contador-paso" id="contadorPaso">Paso 0 / 0</div>
 
-          <!-- ── Layout principal: Memoria | Gantt+Listas ── -->
           <div class="layout-graficas">
 
-            <!-- Columna izquierda: Mapa de memoria -->
             <div class="col-memoria">
               <div class="col-memoria-header">
                 <span class="col-titulo">Mapa de Memoria</span>
-                <span class="col-subtitulo" id="subtituloMem">—</span>
+                <span class="col-subtitulo" id="subtituloMem">&mdash;</span>
               </div>
               <div class="mapa-memoria" id="mapaMemo"></div>
               <div class="leyenda-memoria" id="leyendaMem"></div>
-
             </div>
 
-            <!-- Columna derecha: Gantt + listas -->
             <div class="col-gantt">
-
-              <!-- Header Gantt con botones de vista -->
               <div class="col-gantt-header">
                 <span class="col-titulo">Diagrama de Gantt</span>
                 <div class="gantt-vistas">
-                  <button class="btn-vista activo" id="btnVistaProceso">≡ Por proceso</button>
-                  <button class="btn-vista" id="btnVistaCompacto">▬ Compacto</button>
+                  <button class="btn-vista activo" id="btnVistaCompacto" aria-label="Vista compacta de Gantt">&#9632; Compacto</button>
+                  <button class="btn-vista" id="btnVistaProceso" aria-label="Vista por proceso">&#8801; Por proceso</button>
                 </div>
-                <span class="col-subtitulo" id="subtituloGantt">—</span>
+                <span class="col-subtitulo" id="subtituloGantt">&mdash;</span>
               </div>
-
-              <!-- Canvas del Gantt -->
               <div class="gantt-wrap" id="ganttWrap">
                 <canvas id="canvasGantt"></canvas>
               </div>
-
-              <!-- Leyenda de colores del Gantt -->
               <div class="gantt-leyenda" id="ganttLeyenda"></div>
 
-              <!-- Dos listas lado a lado: Pasos de Memoria | Cola de procesos -->
               <div class="listas-inferiores">
-
-                <!-- Lista de Pasos de Memoria -->
                 <div class="lista-panel">
                   <div class="lista-panel-header">
-                    <span class="lista-panel-titulo">Log de Pasos</span>
+                    <span class="lista-panel-titulo">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="5.5" x2="8.5" y2="5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="3.5" y1="8.5" x2="6.5" y2="8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                      Log de Pasos
+                    </span>
                     <span class="lista-panel-subtitulo" id="subtituloLogPasos">Memoria</span>
                   </div>
-                  <div class="lista-panel-body" id="logPasos">
-                    <!-- Pasos de memoria generados dinámicamente -->
-                  </div>
+                  <div class="lista-panel-body" id="logPasos"></div>
                 </div>
-
-                <!-- Lista de Cola de procesos -->
                 <div class="lista-panel">
                   <div class="lista-panel-header">
-                    <span class="lista-panel-titulo">Lista de Colas</span>
+                    <span class="lista-panel-titulo">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="3" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 10.5C2.5 8.843 4.067 7.5 6 7.5s3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+                      Cola de Procesos
+                    </span>
                     <span class="lista-panel-subtitulo" id="subtituloListaColas">CPU</span>
                   </div>
-                  <div class="lista-panel-body" id="listaColas">
-                    <!-- Cola de procesos generada dinámicamente -->
-                  </div>
+                  <div class="lista-panel-body" id="listaColas"></div>
                 </div>
-
               </div>
-
             </div>
-          </div>
 
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ════ PÁGINA 3: TABLAS ════ -->
+    <section class="pagina" id="paginaTablas" aria-label="P&aacute;gina de tablas">
+
+      <div id="tablasEmpty" class="empty-state">
+        <div class="empty-state-icon"><svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="12" width="36" height="32" rx="4" stroke="#94a3b8" stroke-width="2" fill="none"/><line x1="16" y1="22" x2="40" y2="22" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="28" x2="34" y2="28" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="34" x2="28" y2="34" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><path d="M40 28l4-4v8l-4-4z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/></svg></div>
+        <div class="empty-state-title">Sin datos de simulaci&oacute;n</div>
+        <div class="empty-state-desc">
+          Ejecuta una simulaci&oacute;n desde la p&aacute;gina de Par&aacute;metros
+          para ver las tablas detalladas con m&eacute;tricas por proceso.
         </div>
       </div>
 
-    </section>
+      <div id="tablasContenido" class="oculto">
+      <div class="page-intro">
+        <div class="page-intro-num">03</div>
+        <div>
+          <div class="page-intro-title">Resultados Detallados</div>
+          <div class="page-intro-sub">M&eacute;tricas completas por proceso</div>
+        </div>
+      </div>
 
-    <!-- ══════════════════════════════════
-         PÁGINA 3: TABLAS
-    ═══════════════════════════════════ -->
-    <section class="pagina" id="paginaTablas">
-
-      <div class="card">
-        <div class="card-header"><div class="dot"></div><h2>Tabla de Planificación de CPU</h2></div>
+      <div class="card card-accent-green">
+        <div class="card-header">
+          <h2>Tabla de Planificaci&oacute;n de CPU</h2>
+        </div>
         <div class="card-body sin-padding">
           <div class="tabla-wrap">
             <table id="tablaCPU">
               <thead><tr>
-                <th>Proceso</th><th>Llegada</th><th>Ejecución</th>
-                <th>Inicio</th><th>Fin</th><th>T. Espera</th>
-                <th>T. Retorno</th><th>T. Respuesta</th><th>Estado</th>
+                <th scope="col">Proceso</th><th scope="col">Llegada</th><th scope="col">Ejecuci&oacute;n</th>
+                <th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">T. Espera</th>
+                <th scope="col">T. Retorno</th><th scope="col">T. Respuesta</th><th scope="col">Estado</th>
               </tr></thead>
               <tbody id="cuerpoTablaCPU"></tbody>
             </table>
@@ -357,14 +412,16 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header"><div class="dot"></div><h2>Tabla de Gestión de Memoria</h2></div>
+      <div class="card card-accent-amber">
+        <div class="card-header">
+          <h2>Tabla de Gesti&oacute;n de Memoria</h2>
+        </div>
         <div class="card-body sin-padding">
           <div class="tabla-wrap">
             <table id="tablaMemoria">
               <thead><tr>
-                <th>Proceso</th><th>Tamaño Sol.</th><th>Partición (KB)</th>
-                <th>Dir. Inicio</th><th>Dir. Fin</th><th>Frag. Interna</th><th>Estado</th>
+                <th scope="col">Proceso</th><th scope="col">Tama&ntilde;o Sol.</th><th scope="col">Partici&oacute;n (KB)</th>
+                <th scope="col">Dir. Inicio</th><th scope="col">Dir. Fin</th><th scope="col">Frag. Externa</th><th scope="col">Estado</th>
               </tr></thead>
               <tbody id="cuerpoTablaMemoria"></tbody>
             </table>
@@ -372,21 +429,46 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="dot"></div>
-          <h2>Análisis de Fragmentación</h2>
-
-        </div>
-        <div class="card-body"><div id="analisisFragmentacion"></div></div>
       </div>
-
     </section>
 
   </main>
 </div>
 
-<div id="toast"></div>
+<script>
+// ════════════════════════════════════════════
+// TOAST (inline: disponible antes del módulo)
+// ════════════════════════════════════════════
+function crearToastGlobo(msg, tipo) {
+  const zone = document.getElementById('toastZone');
+  const el = document.createElement('div');
+  el.className = 'toast-globo toast-' + (tipo || 'info');
+  const icons = { exito: '\u2705', error: '\u274c', warn: '\u26a0\ufe0f', info: '\ud83d\udca1' };
+  const icon = icons[tipo] || icons.info;
+  el.innerHTML = `
+    <span class="tg-icon">${icon}</span>
+    <div class="tg-body">
+      <span class="tg-msg"></span>
+      <div class="tg-bar"></div>
+    </div>
+    <button class="tg-x">\u00d7</button>
+  `;
+  el.querySelector('.tg-msg').textContent = msg;
+  el.querySelector('.tg-x').addEventListener('click', () => el.remove());
+  zone.appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 380); }, 4200);
+}
+
+// ════════════════════════════════════════════
+// SIDEBAR TOGGLE (mouse + táctil)
+// ════════════════════════════════════════════
+const sidebar = document.getElementById('sidebar');
+sidebar.addEventListener('mouseenter', () => sidebar.classList.add('expandido'));
+sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('expandido'));
+sidebar.addEventListener('click', () => sidebar.classList.toggle('expandido'));
+sidebar.addEventListener('touchstart', (e) => { e.preventDefault(); sidebar.classList.toggle('expandido'); }, { passive: false });
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
