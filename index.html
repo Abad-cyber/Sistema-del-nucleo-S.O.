@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SimuKernel — Simulador S.O.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/estilos.css"/>
+</head>
+<body>
+
+<div id="toastZone" class="toast-zone"></div>
+
+<div class="contenedor-app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-titulo">
+      <div class="sidebar-logo-wrap">
+        <div class="sidebar-logo-icon" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+            <rect x="9" y="9" width="6" height="6"/>
+            <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+            <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+            <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+            <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+          </svg>
+        </div>
+        <div class="sidebar-textos">
+          <span class="sidebar-nombre">SimuKernel</span>
+          <span class="sidebar-version" id="sidebarVersion">v5.0 · Simulador S.O.</span>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-separador"></div>
+
+    <nav class="sidebar-nav" aria-label="Navegación principal">
+      <!-- Botón Home (siempre visible) -->
+      <button class="nav-item activo" data-pagina="home" data-tooltip="Inicio" aria-label="Ir al inicio" id="navHome">
+        <span class="nav-icono" aria-hidden="true">&#x2302;</span>
+        <span class="nav-texto">Inicio</span>
+      </button>
+
+      <!-- Grupo CPU + Memoria -->
+      <div class="nav-grupo oculto" id="navGrupoCPU">
+        <div class="nav-grupo-label">CPU + Memoria</div>
+        <button class="nav-item" data-pagina="parametros" data-tooltip="Parámetros" aria-label="Ir a parámetros">
+          <span class="nav-icono" aria-hidden="true">&#x2699;</span>
+          <span class="nav-texto">Parámetros</span>
+        </button>
+        <button class="nav-item" data-pagina="grafica" data-tooltip="Gráfica" aria-label="Ir a gráfica">
+          <span class="nav-icono" aria-hidden="true">&#x25B3;</span>
+          <span class="nav-texto">Gráfica</span>
+        </button>
+        <button class="nav-item" data-pagina="tablas" data-tooltip="Tablas" aria-label="Ir a tablas">
+          <span class="nav-icono" aria-hidden="true">&#x25A8;</span>
+          <span class="nav-texto">Tablas</span>
+        </button>
+      </div>
+
+      <!-- Grupo Disco -->
+      <div class="nav-grupo oculto" id="navGrupoDisco">
+        <div class="nav-grupo-label">Disco</div>
+        <button class="nav-item" data-pagina="parametrosDisco" data-tooltip="Config. Disco" aria-label="Ir a parámetros de disco">
+          <span class="nav-icono" aria-hidden="true">&#x2699;</span>
+          <span class="nav-texto">Parámetros</span>
+        </button>
+        <button class="nav-item" data-pagina="graficaDisco" data-tooltip="Simulación" aria-label="Ir a simulación de disco">
+          <span class="nav-icono" aria-hidden="true">&#x25B3;</span>
+          <span class="nav-texto">Simulación</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-ejecutar-sidebar" id="btnEjecutarSidebar" data-tooltip="Ejecutar Simulación" aria-label="Ejecutar simulación">
+        <span class="btn-ej-icono" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+        </span>
+        <span class="btn-ej-texto" id="textoEjecutar">Ejecutar Simulación</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="contenido-principal">
+
+    <header class="app-header">
+      <div class="header-izq">
+        <span class="header-chip">SO</span>
+        <h1 class="header-titulo">Simulador del <span class="grad-text">Núcleo S.O.</span></h1>
+      </div>
+      <div class="header-der">
+        <span class="algo-pill" id="pillCPU">
+          <span class="pill-pulse"></span>CPU: &mdash;
+        </span>
+        <span class="algo-pill" id="pillMem">
+          <span class="pill-pulse" style="background:#f59e0b"></span>MEM: &mdash;
+        </span>
+        <span class="algo-pill oculto" id="pillDisco">
+          <span class="pill-pulse" style="background:#7c3aed"></span>DISCO: &mdash;
+        </span>
+      </div>
+    </header>
+
+    <!-- ════ PÁGINA HOME ════ -->
+    <section class="pagina activa visito" id="paginaHome" aria-label="Página de inicio">
+      <div class="page-intro">
+        <div class="page-intro-num">&#9776;</div>
+        <div>
+          <div class="page-intro-title">Bienvenido a SimuKernel</div>
+          <div class="page-intro-sub">Selecciona el módulo de simulación que deseas utilizar</div>
+        </div>
+      </div>
+
+      <div class="home-grid">
+        <button class="home-card" id="homeCardCPU">
+          <div class="home-card-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+              <rect x="9" y="9" width="6" height="6"/>
+              <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+              <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+              <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/>
+              <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+            </svg>
+          </div>
+          <div class="home-card-titulo">CPU + Memoria</div>
+          <div class="home-card-desc">Planificación de CPU (FCFS, SJF, RR, SRT) y gestión de memoria (First Fit, Best Fit, Worst Fit, Buddy System)</div>
+          <div class="home-card-tags">
+            <span class="home-tag">Gantt</span>
+            <span class="home-tag">Memoria</span>
+            <span class="home-tag">Métricas</span>
+          </div>
+        </button>
+
+        <button class="home-card home-card-disco" id="homeCardDisco">
+          <div class="home-card-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+          </div>
+          <div class="home-card-titulo">Almacenamiento &middot; Disco</div>
+          <div class="home-card-desc">Métodos de asignación de disco: Contigua, Enlazada e Indexada. Visualización de bloques y operaciones de E/S</div>
+          <div class="home-card-tags">
+            <span class="home-tag">Bloques</span>
+            <span class="home-tag">Punteros</span>
+            <span class="home-tag">Índices</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ════ PÁGINA 1: PARÁMETROS (CPU+MEM) ════ -->
+    <section class="pagina" id="paginaParametros" aria-label="Página de parámetros">
+
+      <div class="page-intro">
+        <div class="page-intro-num">01</div>
+        <div>
+          <div class="page-intro-title">Configuración de Simulación</div>
+          <div class="page-intro-sub">Define los procesos y selecciona los algoritmos de planificación</div>
+        </div>
+      </div>
+
+      <div class="card card-accent-teal">
+        <div class="card-header">
+          <h2>Carga de Trabajo</h2>
+        </div>
+        <div class="card-body">
+          <div class="grilla-config">
+            <div class="col-izq">
+              <span class="etiqueta-campo" id="labelArchivo">Archivo de procesos (.csv / .txt)</span>
+              <div class="zona-arrastre" id="zonaArrastre" role="button" tabindex="0" aria-labelledby="labelArchivo">
+                <input type="file" id="inputArchivo" accept=".csv,.txt" aria-label="Seleccionar archivo de procesos"/>
+                <div class="za-inner">
+                  <div class="za-icon-wrap" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </div>
+                  <div class="za-texto">Arrastra tu archivo aquí o <strong>haz clic</strong></div>
+                  <div class="za-sub">proceso, llegada, ejecucion, tamaño_KB</div>
+                </div>
+                <div class="za-nombre" id="nombreArchivo">Sin archivo seleccionado</div>
+              </div>
+              <div class="hint-formato">
+                <div class="hint-titulo">Formato del archivo</div>
+                <code>proceso, llegada, ejecucion, tamaño_KB</code>
+                <code>P1, 0, 5, 50</code>
+                <code>P2, 1, 3, 30</code>
+                <code># Líneas con # son comentarios</code>
+              </div>
+            </div>
+            <div class="col-der">
+              <span class="etiqueta-campo" id="labelTabla">Procesos (edición manual)</span>
+              <div class="tabla-procesos-wrap">
+                <table id="tablaEntrada" aria-labelledby="labelTabla">
+                  <thead><tr>
+                    <th scope="col">Proceso</th><th scope="col">Llegada</th><th scope="col">Ejecución</th><th scope="col">Tamaño (KB)</th><th scope="col"></th>
+                  </tr></thead>
+                  <tbody id="cuerpoTablaEntrada"></tbody>
+                </table>
+              </div>
+              <button class="btn-agregar-fila" id="btnAgregarFila" aria-label="Agregar nueva fila de proceso">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar proceso
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-accent-violet">
+        <div class="card-header">
+          <h2>Configuración de Algoritmos</h2>
+        </div>
+        <div class="card-body">
+          <div class="grilla-algoritmos">
+
+            <div class="grupo-algo">
+              <span class="etiqueta-campo">Planificador de CPU</span>
+              <div class="lista-algo" role="radiogroup" aria-label="Algoritmo de CPU">
+                <label class="tarjeta-algo seleccionado" id="cardFCFS">
+                  <input type="radio" name="algoCPU" value="fcfs" checked/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">FCFS</div>
+                    <div class="algo-desc">First Come First Served &middot; No expulsivo</div>
+                  </div>
+                  <span class="algo-etiqueta">No expulsivo</span>
+                </label>
+                <label class="tarjeta-algo" id="cardSJF">
+                  <input type="radio" name="algoCPU" value="sjf"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">SJF</div>
+                    <div class="algo-desc">Shortest Job First &middot; Menor ráfaga primero</div>
+                  </div>
+                  <span class="algo-etiqueta">No expulsivo</span>
+                </label>
+                <label class="tarjeta-algo" id="cardRR">
+                  <input type="radio" name="algoCPU" value="rr"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">RR</div>
+                    <div class="algo-desc">Round Robin &middot; Quantum configurable</div>
+                  </div>
+                  <span class="algo-etiqueta exp">Expulsivo</span>
+                </label>
+                <label class="tarjeta-algo" id="cardSRT">
+                  <input type="radio" name="algoCPU" value="srt"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">SRT</div>
+                    <div class="algo-desc">Shortest Remaining Time &middot; SJF con expulsión</div>
+                  </div>
+                  <span class="algo-etiqueta exp">Expulsivo</span>
+                </label>
+              </div>
+              <div class="caja-quantum inactivo" id="cajaQuantum">
+                <span class="quantum-etiqueta">Quantum (RR)</span>
+                <div class="quantum-control">
+                  <button class="btn-quantum" id="btnQuantumMenos" aria-label="Reducir quantum">&minus;</button>
+                  <input type="number" id="inputQuantum" value="2" min="1" max="99" aria-label="Valor del quantum"/>
+                  <button class="btn-quantum" id="btnQuantumMas" aria-label="Aumentar quantum">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grupo-algo">
+              <span class="etiqueta-campo">Algoritmo de Memoria</span>
+              <div class="lista-algo" role="radiogroup" aria-label="Algoritmo de memoria">
+                <label class="tarjeta-algo seleccionado" id="cardFF">
+                  <input type="radio" name="algoMem" value="ff" checked/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">First Fit</div>
+                    <div class="algo-desc">Primer Ajuste &middot; Primer hueco suficiente</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Rápido</span>
+                </label>
+                <label class="tarjeta-algo" id="cardBF">
+                  <input type="radio" name="algoMem" value="bf"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Best Fit</div>
+                    <div class="algo-desc">Mejor Ajuste &middot; Hueco más pequeño suficiente</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Preciso</span>
+                </label>
+                <label class="tarjeta-algo" id="cardWF">
+                  <input type="radio" name="algoMem" value="wf"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Worst Fit</div>
+                    <div class="algo-desc">Peor Ajuste &middot; Hueco más grande disponible</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Heurístico</span>
+                </label>
+                <label class="tarjeta-algo" id="cardBuddy">
+                  <input type="radio" name="algoMem" value="buddy"/>
+                  <div class="radio-anillo"></div>
+                  <div class="algo-info">
+                    <div class="algo-nombre">Buddy System</div>
+                    <div class="algo-desc">Potencias de 2 &middot; Fusión de gemelos</div>
+                  </div>
+                  <span class="algo-etiqueta mem">Potencias 2</span>
+                </label>
+              </div>
+              <div class="grilla-params-mem">
+                <div class="grupo-input">
+                  <label class="inp-etiqueta" for="memoriaTotal">Memoria total (KB)</label>
+                  <input type="number" class="inp-campo" id="memoriaTotal" value="400" min="64"/>
+                </div>
+                <div class="grupo-input">
+                  <label class="inp-etiqueta" for="memoriaSOReservado">SO reservado (KB)</label>
+                  <input type="number" class="inp-campo" id="memoriaSOReservado" value="0" min="0"/>
+                </div>
+              </div>
+              <span class="etiqueta-campo" style="margin-top:14px">Política de partición</span>
+              <div class="fila-politica" role="radiogroup" aria-label="Política de partición">
+                <button class="btn-politica activo" data-politica="dinamica" id="polDinamica" aria-pressed="true">Dinámica</button>
+                <button class="btn-politica" data-politica="fija" id="polFija" aria-pressed="false">Fija</button>
+              </div>
+              <div class="config-fija oculto" id="configParticionesFijas">
+                <label class="inp-etiqueta" for="particionesFijas">Tamaños de particiones (KB, separados por coma)</label>
+                <input type="text" class="inp-campo" id="particionesFijas" value="100,100,100,100"/>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ════ PÁGINA 2: GRÁFICA (CPU+MEM) ════ -->
+    <section class="pagina" id="paginaGrafica" aria-label="Página de gráfica">
+
+      <div id="graficaEmpty" class="empty-state">
+        <div class="empty-state-icon"><svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="28" cy="28" r="26" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 4" fill="none"/><path d="M16 30c0-4.418 3.582-8 8-8l2-6h4l2 6c4.418 0 8 3.582 8 8" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M28 22v-6m0 0h-4m4 0h4" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><circle cx="22" cy="32" r="2" fill="#cbd5e1"/><circle cx="36" cy="32" r="2" fill="#cbd5e1"/><path d="M22 36c0 0 2 4 6 4s6-4 6-4" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="empty-state-title">Aún no hay simulación</div>
+        <div class="empty-state-desc">
+          Configura los procesos y algoritmos en la página de Parámetros,
+          luego pulsa <strong>Ejecutar Simulación</strong> para ver los resultados aquí.
+        </div>
+      </div>
+
+      <div id="graficaContenido" class="oculto">
+      <div class="card">
+        <div class="card-header">
+          <h2>Resultados y Visualización</h2>
+          <div class="card-header-der">
+            <div class="controles-sim">
+              <button class="btn-ctrl" id="btnPasoAnterior" title="Paso anterior" aria-label="Paso anterior">&#9664;</button>
+              <button class="btn-ctrl activo" id="btnPlayPausa" aria-label="Reproducir o pausar">&#9654; Auto</button>
+              <button class="btn-ctrl" id="btnPasoSiguiente" title="Siguiente" aria-label="Paso siguiente">&#9654;|</button>
+              <button class="btn-reiniciar" id="btnReiniciar" aria-label="Reiniciar simulación">&#8634; Reiniciar</button>
+            </div>
+            <div class="control-velocidad">
+              <label for="sliderVelocidad">Vel.</label>
+              <input type="range" id="sliderVelocidad" min="1" max="5" value="3" aria-label="Velocidad de animación"/>
+              <span id="textoVelocidad">Normal</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body sin-padding">
+
+          <div class="fila-metricas" id="filaMetricas">
+            <div class="grupo-metricas">
+              <div class="metricas-titulo">Memoria</div>
+              <div class="metricas-grid">
+                <div class="caja-metrica" id="cmUsoMem"><div class="cm-etiqueta">% Uso Memoria</div><div class="cm-valor" id="mvUsoMem">&mdash;</div></div>
+                <div class="caja-metrica" id="cmMemLibre"><div class="cm-etiqueta">Memoria Libre</div><div class="cm-valor" id="mvMemLibre">&mdash;</div></div>
+                <div class="caja-metrica" id="cmFragInt"><div class="cm-etiqueta">Frag. Interna</div><div class="cm-valor" id="mvFragInt">&mdash;</div></div>
+                <div class="caja-metrica" id="cmFragExt"><div class="cm-etiqueta">Frag. Externa</div><div class="cm-valor" id="mvFragExt">&mdash;</div></div>
+                <div class="caja-metrica" id="cmProcMem"><div class="cm-etiqueta">Asignados / Total</div><div class="cm-valor" id="mvProcMem">&mdash;</div></div>
+              </div>
+            </div>
+            <div class="divisor-metricas"></div>
+            <div class="grupo-metricas">
+              <div class="metricas-titulo">CPU</div>
+              <div class="metricas-grid">
+                <div class="caja-metrica" id="cmTotalProc"><div class="cm-etiqueta">Total Procesos</div><div class="cm-valor" id="mvTotalProc">&mdash;</div></div>
+                <div class="caja-metrica" id="cmUsoCPU"><div class="cm-etiqueta">Uso de CPU</div><div class="cm-valor" id="mvUsoCPU">&mdash;</div></div>
+                <div class="caja-metrica" id="cmTEPromedio"><div class="cm-etiqueta">TE Promedio</div><div class="cm-valor" id="mvTEPromedio">&mdash;</div></div>
+                <div class="caja-metrica" id="cmTRPromedio"><div class="cm-etiqueta">TR Promedio</div><div class="cm-valor" id="mvTRPromedio">&mdash;</div></div>
+                <div class="caja-metrica" id="cmThroughput"><div class="cm-etiqueta">Throughput</div><div class="cm-valor" id="mvThroughput">&mdash;</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="barra-progreso"><div class="barra-progreso-fill" id="barraProgresoFill"></div></div>
+          <div class="contador-paso" id="contadorPaso">Paso 0 / 0</div>
+
+          <div class="layout-graficas">
+
+            <div class="col-memoria">
+              <div class="col-memoria-header">
+                <span class="col-titulo">Mapa de Memoria</span>
+                <span class="col-subtitulo" id="subtituloMem">&mdash;</span>
+              </div>
+              <div class="mapa-memoria" id="mapaMemo"></div>
+              <div class="leyenda-memoria" id="leyendaMem"></div>
+            </div>
+
+            <div class="col-gantt">
+              <div class="col-gantt-header">
+                <span class="col-titulo">Diagrama de Gantt</span>
+                <div class="gantt-vistas">
+                  <button class="btn-vista activo" id="btnVistaCompacto" aria-label="Vista compacta de Gantt">&#9632; Compacto</button>
+                  <button class="btn-vista" id="btnVistaProceso" aria-label="Vista por proceso">&#8801; Por proceso</button>
+                </div>
+                <span class="col-subtitulo" id="subtituloGantt">&mdash;</span>
+              </div>
+              <div class="gantt-wrap" id="ganttWrap">
+                <canvas id="canvasGantt"></canvas>
+              </div>
+              <div class="gantt-leyenda" id="ganttLeyenda"></div>
+
+              <div class="listas-inferiores">
+                <div class="lista-panel">
+                  <div class="lista-panel-header">
+                    <span class="lista-panel-titulo">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="5.5" x2="8.5" y2="5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="3.5" y1="8.5" x2="6.5" y2="8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                      Log de Pasos
+                    </span>
+                    <span class="lista-panel-subtitulo" id="subtituloLogPasos">Memoria</span>
+                  </div>
+                  <div class="lista-panel-body" id="logPasos"></div>
+                </div>
+                <div class="lista-panel">
+                  <div class="lista-panel-header">
+                    <span class="lista-panel-titulo">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="3" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M2.5 10.5C2.5 8.843 4.067 7.5 6 7.5s3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+                      Cola de Procesos
+                    </span>
+                    <span class="lista-panel-subtitulo" id="subtituloListaColas">CPU</span>
+                  </div>
+                  <div class="lista-panel-body" id="listaColas"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- ════ PÁGINA 3: TABLAS (CPU+MEM) ════ -->
+    <section class="pagina" id="paginaTablas" aria-label="Página de tablas">
+
+      <div id="tablasEmpty" class="empty-state">
+        <div class="empty-state-icon"><svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="12" width="36" height="32" rx="4" stroke="#94a3b8" stroke-width="2" fill="none"/><line x1="16" y1="22" x2="40" y2="22" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="28" x2="34" y2="28" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="34" x2="28" y2="34" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/><path d="M40 28l4-4v8l-4-4z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/></svg></div>
+        <div class="empty-state-title">Sin datos de simulación</div>
+        <div class="empty-state-desc">
+          Ejecuta una simulación desde la página de Parámetros
+          para ver las tablas detalladas con métricas por proceso.
+        </div>
+      </div>
+
+      <div id="tablasContenido" class="oculto">
+      <div class="page-intro">
+        <div class="page-intro-num">03</div>
+        <div>
+          <div class="page-intro-title">Resultados Detallados</div>
+          <div class="page-intro-sub">Métricas completas por proceso</div>
+        </div>
+      </div>
+
+      <div class="card card-accent-green">
+        <div class="card-header">
+          <h2>Tabla de Planificación de CPU</h2>
+        </div>
+        <div class="card-body sin-padding">
+          <div class="tabla-wrap">
+            <table id="tablaCPU">
+              <thead><tr>
+                <th scope="col">Proceso</th><th scope="col">Llegada</th><th scope="col">Ejecución</th>
+                <th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">T. Espera</th>
+                <th scope="col">T. Retorno</th><th scope="col">T. Respuesta</th><th scope="col">Estado</th>
+              </tr></thead>
+              <tbody id="cuerpoTablaCPU"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-accent-amber">
+        <div class="card-header">
+          <h2>Tabla de Gestión de Memoria</h2>
+        </div>
+        <div class="card-body sin-padding">
+          <div class="tabla-wrap">
+            <table id="tablaMemoria">
+              <thead><tr>
+                <th scope="col">Proceso</th><th scope="col">Tamaño Sol.</th><th scope="col">Partición (KB)</th>
+                <th scope="col">Dir. Inicio</th><th scope="col">Dir. Fin</th><th scope="col">Frag. Externa</th><th scope="col">Estado</th>
+              </tr></thead>
+              <tbody id="cuerpoTablaMemoria"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </section>
+
+    <!-- ════ PÁGINA 4: PARÁMETROS DISCO ════ -->
+    <section class="pagina" id="paginaParametrosDisco" aria-label="Parámetros de disco">
+
+      <div class="page-intro">
+        <div class="page-intro-num">01</div>
+        <div>
+          <div class="page-intro-title">Configuración de Disco</div>
+          <div class="page-intro-sub">Define los archivos y selecciona el método de asignación</div>
+        </div>
+      </div>
+
+      <!-- Selector de método -->
+      <div class="card card-accent-violet">
+        <div class="card-header">
+          <h2>Método de Asignación</h2>
+        </div>
+        <div class="card-body">
+          <div class="lista-algo lista-algo-horizontal" role="radiogroup" aria-label="Método de asignación de disco">
+            <label class="tarjeta-algo seleccionado" id="cardContigua">
+              <input type="radio" name="algoDisco" value="contigua" checked/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Contigua</div>
+                <div class="algo-desc">Bloques adyacentes &middot; Acceso directo</div>
+              </div>
+              <span class="algo-etiqueta">Secuencial</span>
+            </label>
+            <label class="tarjeta-algo" id="cardEnlazada">
+              <input type="radio" name="algoDisco" value="enlazada"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Enlazada</div>
+                <div class="algo-desc">Lista enlazada &middot; Sin fragmentación externa</div>
+              </div>
+              <span class="algo-etiqueta exp">Lista Enlazada</span>
+            </label>
+            <label class="tarjeta-algo" id="cardIndexada">
+              <input type="radio" name="algoDisco" value="indexada"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Indexada</div>
+                <div class="algo-desc">Bloque de índices &middot; Acceso directo</div>
+              </div>
+              <span class="algo-etiqueta mem">Bloque Índice</span>
+            </label>
+          </div>
+
+          <!-- Variante para Contigua -->
+          <div id="grupoVarianteContigua" style="margin-top:16px;">
+            <span class="etiqueta-campo">Variante de Asignación Contigua</span>
+            <div class="fila-politica" role="radiogroup" aria-label="Variante Contigua">
+              <button class="btn-politica activo" data-variante="manual" id="btnVarManual">Manual (Inicio exacto)</button>
+              <button class="btn-politica" data-variante="ff" id="btnVarFF">First Fit (Primer ajuste)</button>
+              <button class="btn-politica" data-variante="bf" id="btnVarBF">Best Fit (Mejor ajuste)</button>
+            </div>
+          </div>
+
+          <div class="grilla-params-mem" style="margin-top:16px">
+            <div class="grupo-input">
+              <label class="inp-etiqueta" for="discoBloques">Cantidad de bloques</label>
+              <input type="number" class="inp-campo" id="discoBloques" value="120" min="8"/>
+              <span class="hint-recomendado">Recomendado: 120 para replicar ejercicios del PDF</span>
+            </div>
+            <div class="grupo-input">
+              <label class="inp-etiqueta" for="discoTamanioBloque">Tamaño de bloque (Bytes)</label>
+              <input type="number" class="inp-campo" id="discoTamanioBloque" value="512" min="32"/>
+            </div>
+            <div class="grupo-input" id="grupoPuntero" style="opacity: 0.35;">
+              <label class="inp-etiqueta" for="discoTamanioPuntero">Tamaño puntero/dirección (Bytes)</label>
+              <input type="number" class="inp-campo" id="discoTamanioPuntero" value="4" min="1" disabled/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carga de datos -->
+      <div class="card card-accent-teal">
+        <div class="card-header">
+          <h2>Archivos en Disco</h2>
+        </div>
+        <div class="card-body">
+          <div class="grilla-config">
+            <div class="col-izq">
+              <span class="etiqueta-campo" id="labelArchivoDisco">Archivo de datos (.csv / .txt)</span>
+              <div class="zona-arrastre" id="zonaArrastreDisco" role="button" tabindex="0" aria-labelledby="labelArchivoDisco">
+                <input type="file" id="inputArchivoDisco" accept=".csv,.txt" aria-label="Seleccionar archivo de disco"/>
+                <div class="za-inner">
+                  <div class="za-icon-wrap" aria-hidden="true">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  </div>
+                  <div class="za-texto">Arrastra tu archivo aquí o <strong>haz clic</strong></div>
+                  <div class="za-sub" id="zaSubDisco">archivo, inicio, longitud</div>
+                </div>
+                <div class="za-nombre" id="nombreArchivoDisco">Sin archivo seleccionado</div>
+              </div>
+              <div class="hint-formato" id="hintFormatoDisco">
+                <div class="hint-titulo">Formato (Contigua)</div>
+                <code>archivo, inicio, longitud</code>
+                <code>AA, 1, 3</code>
+                <code>BB, 14, 2</code>
+              </div>
+            </div>
+            <div class="col-der">
+              <span class="etiqueta-campo" id="labelTablaDisco">Archivos (edición manual)</span>
+              <div class="tabla-procesos-wrap">
+                <table id="tablaEntradaDisco" aria-labelledby="labelTablaDisco">
+                  <thead id="theadEntradaDisco"><tr>
+                    <th scope="col">Archivo</th><th scope="col">Inicio</th><th scope="col">Longitud</th><th scope="col"></th>
+                  </tr></thead>
+                  <tbody id="cuerpoTablaEntradaDisco"></tbody>
+                </table>
+              </div>
+              <button class="btn-agregar-fila" id="btnAgregarFilaDisco" aria-label="Agregar nuevo archivo">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar archivo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ════ PÁGINA 5: SIMULACIÓN DISCO ════ -->
+    <section class="pagina" id="paginaGraficaDisco" aria-label="Simulación de disco">
+
+      <div id="discoEmpty" class="empty-state">
+        <div class="empty-state-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="26" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+            <ellipse cx="28" cy="20" rx="14" ry="5" stroke="#94a3b8" stroke-width="2" fill="none"/>
+            <path d="M14 20v16c0 2.76 6.27 5 14 5s14-2.24 14-5V20" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+            <path d="M14 28c0 2.76 6.27 5 14 5s14-2.24 14-5" stroke="#cbd5e1" stroke-width="1.5" fill="none"/>
+          </svg>
+        </div>
+        <div class="empty-state-title">Aún no hay simulación de disco</div>
+        <div class="empty-state-desc">
+          Configura los archivos y el método de asignación en la página de Parámetros,
+          luego pulsa <strong>Simular Disco</strong> para ver los resultados aquí.
+        </div>
+      </div>
+
+      <div id="discoContenido" class="oculto">
+      <div class="card">
+        <div class="card-header">
+          <h2>Simulación de Asignación de Disco</h2>
+          <div class="card-header-der">
+            <div class="controles-sim">
+              <button class="btn-ctrl" id="btnPasoAnteriorDisco" title="Paso anterior" aria-label="Paso anterior">&#9664;</button>
+              <button class="btn-ctrl activo" id="btnPlayPausaDisco" aria-label="Reproducir o pausar">&#9654; Auto</button>
+              <button class="btn-ctrl" id="btnPasoSiguienteDisco" title="Siguiente" aria-label="Paso siguiente">&#9654;|</button>
+              <button class="btn-reiniciar" id="btnReiniciarDisco" aria-label="Reiniciar simulación">&#8634; Reiniciar</button>
+            </div>
+            <div class="control-velocidad">
+              <label for="sliderVelocidadDisco">Vel.</label>
+              <input type="range" id="sliderVelocidadDisco" min="1" max="5" value="3" aria-label="Velocidad de animación"/>
+              <span id="textoVelocidadDisco">Normal</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body sin-padding">
+
+          <!-- Métricas de disco -->
+          <div class="fila-metricas" id="filaMetricasDisco">
+            <div class="grupo-metricas" style="flex:1">
+              <div class="metricas-titulo">Disco</div>
+              <div class="metricas-grid metricas-grid-6">
+                <div class="caja-metrica"><div class="cm-etiqueta">% Uso Disco</div><div class="cm-valor" id="mvUsoDisco">&mdash;</div></div>
+                <div class="caja-metrica"><div class="cm-etiqueta">Bloques Libres</div><div class="cm-valor" id="mvBloquesLibres">&mdash;</div></div>
+                <div class="caja-metrica"><div class="cm-etiqueta">Bloques Ocupados</div><div class="cm-valor" id="mvBloquesOcupados">&mdash;</div></div>
+                <div class="caja-metrica"><div class="cm-etiqueta">Archivos Activos</div><div class="cm-valor" id="mvArchivosActivos">&mdash;</div></div>
+                <div class="caja-metrica"><div class="cm-etiqueta">Frag. Externa</div><div class="cm-valor" id="mvFragExtDisco">&mdash;</div></div>
+                <div class="caja-metrica"><div class="cm-etiqueta">Op. E/S</div><div class="cm-valor" id="mvOpsES">&mdash;</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="barra-progreso"><div class="barra-progreso-fill" id="barraProgresoFillDisco"></div></div>
+          <div class="contador-paso" id="contadorPasoDisco">Paso 0 / 0</div>
+
+          <!-- Layout: Grilla disco + Log pasos -->
+          <div class="layout-graficas layout-disco">
+
+            <div class="col-disco-grilla">
+              <div class="col-memoria-header">
+                <span class="col-titulo">Mapa de Bloques</span>
+                <span class="col-subtitulo" id="subtituloDisco">&mdash;</span>
+              </div>
+              <div class="grilla-disco-wrap">
+                <div class="grilla-disco" id="grillaDisco"></div>
+              </div>
+              <div class="leyenda-memoria" id="leyendaDisco"></div>
+            </div>
+
+            <div class="col-gantt">
+              <div class="lista-panel" style="flex:1;border-right:none">
+                <div class="lista-panel-header">
+                  <span class="lista-panel-titulo">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><line x1="3.5" y1="5.5" x2="8.5" y2="5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="3.5" y1="8.5" x2="6.5" y2="8.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    Bitácora de Operaciones
+                  </span>
+                  <span class="lista-panel-subtitulo" id="subtituloLogDisco">E/S</span>
+                </div>
+                <div class="lista-panel-body" id="logPasosDisco" style="max-height: 350px;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de metadatos -->
+      <div class="card card-accent-amber">
+        <div class="card-header">
+          <h2>Directorio del Sistema de Archivos (Metadatos)</h2>
+        </div>
+        <div class="card-body sin-padding">
+          <div class="tabla-wrap">
+            <table id="tablaMetadatos">
+              <thead id="theadMetadatos"><tr>
+                <th scope="col">Archivo</th><th scope="col">Inicio</th><th scope="col">Longitud</th>
+              </tr></thead>
+              <tbody id="cuerpoTablaMetadatos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// TOAST (inline: disponible antes del módulo)
+// ════════════════════════════════════════════
+function crearToastGlobo(msg, tipo) {
+  const zone = document.getElementById('toastZone');
+  const el = document.createElement('div');
+  el.className = 'toast-globo toast-' + (tipo || 'info');
+  const icons = { exito: '\u2705', error: '\u274c', warn: '\u26a0\ufe0f', info: '\ud83d\udca1' };
+  const icon = icons[tipo] || icons.info;
+  el.innerHTML = `
+    <span class="tg-icon">${icon}</span>
+    <div class="tg-body">
+      <span class="tg-msg"></span>
+      <div class="tg-bar"></div>
+    </div>
+    <button class="tg-x">\u00d7</button>
+  `;
+  el.querySelector('.tg-msg').textContent = msg;
+  el.querySelector('.tg-x').addEventListener('click', () => el.remove());
+  zone.appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => el.classList.add('show')); });
+  setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 380); }, 4200);
+}
+
+// ════════════════════════════════════════════
+// SIDEBAR TOGGLE (mouse + táctil)
+// ════════════════════════════════════════════
+const sidebar = document.getElementById('sidebar');
+sidebar.addEventListener('mouseenter', () => sidebar.classList.add('expandido'));
+sidebar.addEventListener('mouseleave', () => sidebar.classList.remove('expandido'));
+sidebar.addEventListener('click', () => sidebar.classList.toggle('expandido'));
+sidebar.addEventListener('touchstart', (e) => { e.preventDefault(); sidebar.classList.toggle('expandido'); }, { passive: false });
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
