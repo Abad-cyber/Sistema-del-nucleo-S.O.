@@ -6,7 +6,7 @@
   <title>SimuKernel — Simulador S.O.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="css/estilos.css"/>
+  <link rel="stylesheet" href="css/estilos.css?v=2"/>
 </head>
 <body>
 
@@ -553,15 +553,53 @@
               </div>
               <span class="algo-etiqueta mem">Bloque Índice</span>
             </label>
+            <label class="tarjeta-algo" id="cardFAT">
+              <input type="radio" name="algoDisco" value="fat"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">FAT</div>
+                <div class="algo-desc">Tabla de asignación &middot; Sin puntero en bloque</div>
+              </div>
+              <span class="algo-etiqueta" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">FAT</span>
+            </label>
+            <label class="tarjeta-algo" id="cardIndexadaML">
+              <input type="radio" name="algoDisco" value="indexada-ml"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Indexada Multi-Nivel</div>
+                <div class="algo-desc">2 niveles de índice &middot; Archivos grandes</div>
+              </div>
+              <span class="algo-etiqueta mem" style="background:linear-gradient(135deg,#0891b2,#0d7ea8)">Multi-Nivel</span>
+            </label>
+            <label class="tarjeta-algo" id="cardExtensiones">
+              <input type="radio" name="algoDisco" value="extensiones"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Extensiones</div>
+                <div class="algo-desc">Bloques contiguos múltiples &middot; Extent-based</div>
+              </div>
+              <span class="algo-etiqueta" style="background:linear-gradient(135deg,#10b981,#059669)">Extensiones</span>
+            </label>
+            <label class="tarjeta-algo" id="cardBitmap">
+              <input type="radio" name="algoDisco" value="bitmap"/>
+              <div class="radio-anillo"></div>
+              <div class="algo-info">
+                <div class="algo-nombre">Bitmap</div>
+                <div class="algo-desc">Mapa de bits &middot; Escaneo visual de huecos libres</div>
+              </div>
+              <span class="algo-etiqueta" style="background:linear-gradient(135deg,#f59e0b,#d97706)">Bitmap</span>
+            </label>
           </div>
 
-          <!-- Variante para Contigua -->
-          <div id="grupoVarianteContigua" style="margin-top:16px;">
-            <span class="etiqueta-campo">Variante de Asignación Contigua</span>
-            <div class="fila-politica" role="radiogroup" aria-label="Variante Contigua">
-              <button class="btn-politica activo" data-variante="manual" id="btnVarManual">Manual (Inicio exacto)</button>
-              <button class="btn-politica" data-variante="ff" id="btnVarFF">First Fit (Primer ajuste)</button>
-              <button class="btn-politica" data-variante="bf" id="btnVarBF">Best Fit (Mejor ajuste)</button>
+          <!-- Variante / Modalidad de Asignación -->
+          <div id="grupoModalidadDisco" style="margin-top:16px;">
+            <span class="etiqueta-campo" id="labelModalidad">Modalidad / Política de Asignación</span>
+            <div class="fila-politica" role="radiogroup" aria-labelledby="labelModalidad" id="contenedorBotonesModalidad">
+              <button class="btn-politica activo" data-variante="dinamica" id="btnVarDinamica">Automática (Búsqueda Libre)</button>
+              <button class="btn-politica" data-variante="manual" id="btnVarManual">Manual (Punteros Exactos)</button>
+              <button class="btn-politica contigua-only" data-variante="ff" id="btnVarFF">First Fit</button>
+              <button class="btn-politica contigua-only" data-variante="bf" id="btnVarBF">Best Fit</button>
+              <button class="btn-politica contigua-only" data-variante="wf" id="btnVarWF">Worst Fit</button>
             </div>
           </div>
 
@@ -569,7 +607,6 @@
             <div class="grupo-input">
               <label class="inp-etiqueta" for="discoBloques">Cantidad de bloques</label>
               <input type="number" class="inp-campo" id="discoBloques" value="120" min="8"/>
-              <span class="hint-recomendado">Recomendado: 120 para replicar ejercicios del PDF</span>
             </div>
             <div class="grupo-input">
               <label class="inp-etiqueta" for="discoTamanioBloque">Tamaño de bloque (Bytes)</label>
@@ -699,6 +736,17 @@
               </div>
               <div class="grilla-disco-wrap">
                 <div class="grilla-disco" id="grillaDisco"></div>
+                <!-- Panel oculto por defecto para mostrar el Bitmap -->
+                <div id="panelBitmapWrapper" class="panel-bitmap" style="display:none;">
+                  <div class="panel-bitmap-header">
+                    <span class="panel-bitmap-titulo">Estado del Mapa de Bits</span>
+                    <div class="panel-bitmap-leyenda">
+                      <span><span class="bml-bit0">0</span> = Libre</span>
+                      <span><span class="bml-bit1">1</span> = Ocupado</span>
+                    </div>
+                  </div>
+                  <div class="panel-bitmap-body" id="bitmapDisplay"></div>
+                </div>
               </div>
               <div class="leyenda-memoria" id="leyendaDisco"></div>
             </div>
@@ -712,7 +760,7 @@
                   </span>
                   <span class="lista-panel-subtitulo" id="subtituloLogDisco">E/S</span>
                 </div>
-                <div class="lista-panel-body" id="logPasosDisco" style="max-height: 350px;"></div>
+                <div class="lista-panel-body" id="logPasosDisco" style="max-height: 420px;"></div>
               </div>
             </div>
 

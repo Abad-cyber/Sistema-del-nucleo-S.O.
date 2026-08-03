@@ -1,0 +1,3 @@
+BaseDatos, 15
+Log, 4
+Cache, 9

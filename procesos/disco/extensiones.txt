@@ -1,0 +1,23 @@
+# Asignación BASADA EN EXTENSIONES (Extent-Based)
+# ==================================================
+# Método: Extensiones
+# Formato: archivo, inicio1, longitud1, inicio2, longitud2, ...
+#   Los pares (inicio, longitud) definen cada extensión contigua.
+#   Un archivo puede tener N extensiones.
+#
+# VENTAJA sobre contigua: el archivo puede fragmentarse en pocas regiones
+# contiguas (extensiones), en lugar de bloques dispersos (enlazada).
+# Cada extensión sigue siendo acceso secuencial rápido.
+#
+# Ejemplo de tabla de extensiones para AA:
+#   Ext.1: bloques 0-4   (5 bloques)
+#   Ext.2: bloques 20-22 (3 bloques)
+#   Ext.3: bloques 40-43 (4 bloques)
+#
+# Disco recomendado: 80 bloques, bloque 512 bytes
+# ==================================================
+AA, 0, 5, 20, 3, 40, 4
+BB, 8, 6, 35, 5
+CC, 15, 4, 50, 7
+DD, 25, 2, 60, 3, 70, 2
+EE, 30, 8

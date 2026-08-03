@@ -1,0 +1,3 @@
+Sistema, 12
+Usuario, 5
+Juego, 20

@@ -1,0 +1,25 @@
+# Asignación BITMAP (Mapa de Bits de Espacio Libre)
+# ====================================================
+# Método: Bitmap
+# Formato: archivo, num_bloques
+#
+# El sistema mantiene un BITMAP paralelo al disco:
+#   bit[i] = 0  → Bloque i está LIBRE
+#   bit[i] = 1  → Bloque i está OCUPADO
+#
+# Para asignar un archivo de N bloques, el SO escanea el bitmap
+# linealmente y toma los primeros N bits en 0 que encuentre.
+#
+# VISUALIZACIÓN: El simulador muestra el bitmap en tiempo real,
+# con cada bit cambiando de 0→1 a medida que se asignan bloques.
+# Los bits coloreados corresponden a cada archivo.
+#
+# Disco recomendado: 64 bloques (para ver el bitmap completo cómodamente)
+# ====================================================
+AA, 8
+BB, 5
+CC, 12
+DD, 4
+EE, 6
+FF, 3
+GG, 10

@@ -737,15 +737,15 @@ body {
 .lista-panel-body::after { content:''; position:sticky; bottom:0; left:0; right:0; height:24px; background:linear-gradient(transparent, var(--surface)); pointer-events:none; flex-shrink:0; margin-top:-24px; z-index:1; }
 
 .paso-item {
-  position:relative; display:flex; gap:10px; align-items:flex-start;
-  padding:7px 10px 7px 14px; border-radius:8px;
+  position:relative; display:flex; gap:12px; align-items:flex-start;
+  padding:10px 12px 10px 18px; border-radius:10px;
   background:var(--surface); animation:popIn .3s cubic-bezier(.22,1,.36,1) both;
-  font-size:11px; box-shadow:0 1px 2px rgba(0,0,0,.03), inset 0 1px 0 rgba(255,255,255,.6);
+  font-size:13px; box-shadow:0 1px 2px rgba(0,0,0,.03), inset 0 1px 0 rgba(255,255,255,.6);
   transition:transform .12s, box-shadow .12s;
   contain:layout style paint;
 }
 .paso-item:hover { transform:translateX(4px); box-shadow:0 3px 10px rgba(0,0,0,.08), inset 0 1px 0 #fff; }
-.paso-item::after { content:''; position:absolute; left:2px; top:10px; width:8px; height:8px; border-radius:50%; background:var(--borde-medio); border:2px solid var(--surface); box-shadow:0 0 0 1px rgba(0,0,0,.05); flex-shrink:0; }
+.paso-item::after { content:''; position:absolute; left:4px; top:13px; width:10px; height:10px; border-radius:50%; background:var(--borde-medio); border:2px solid var(--surface); box-shadow:0 0 0 1px rgba(0,0,0,.05); flex-shrink:0; }
 .paso-item.no-anim { animation:none; opacity:1 !important; }
 .paso-item.paso-ok { background:linear-gradient(135deg, #f0fdf4 0%, #fff 80%); }
 .paso-item.paso-ok::after { background:var(--green); border-color:#f0fdf4; box-shadow:0 0 0 1px rgba(5,150,105,.15); }
@@ -760,10 +760,10 @@ body {
 .paso-item.paso-cola { background:linear-gradient(135deg, var(--blue-l) 0%, #fff 80%); }
 .paso-item.paso-cola::after { background:var(--blue); border-color:var(--blue-l); box-shadow:0 0 0 1px rgba(37,99,235,.15); }
 
-.paso-num { font-family:'JetBrains Mono', monospace; font-size:7px; font-weight:700; color:var(--txt4); min-width:20px; background:var(--surface2); border-radius:4px; padding:2px 3px; text-align:center; flex-shrink:0; letter-spacing:-.3px; line-height:1.3; }
-.paso-desc { color:var(--txt3); line-height:1.55; flex:1; font-size:11px; }
+.paso-num { font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:700; color:var(--txt4); min-width:30px; background:var(--surface2); border-radius:6px; padding:3px 5px; text-align:center; flex-shrink:0; letter-spacing:-.3px; line-height:1.4; }
+.paso-desc { color:var(--txt3); line-height:1.6; flex:1; font-size:13px; }
 .paso-desc strong { color:var(--txt); font-weight:700; }
-.paso-badge { font-family:'JetBrains Mono', monospace; font-size:6px; font-weight:800; padding:2px 6px; border-radius:20px; flex-shrink:0; letter-spacing:.3px; text-transform:uppercase; box-shadow:inset 0 1px 0 rgba(255,255,255,.4); }
+.paso-badge { font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:800; padding:3px 8px; border-radius:20px; flex-shrink:0; letter-spacing:.3px; text-transform:uppercase; box-shadow:inset 0 1px 0 rgba(255,255,255,.4); }
 .paso-badge.ok      { background:var(--green-l); color:#065f46; }
 .paso-badge.error   { background:var(--rose-l);  color:#9f1239; }
 .paso-badge.libre   { background:var(--orange-l);color:#9a3412; }
@@ -1030,4 +1030,260 @@ button:focus-visible, input:focus-visible { border-radius: 4px; }
 }
 #paginaSimulacionDisco .caja-metrica.cargado {
   border-color: rgba(124, 58, 237, 0.25);
+}
+
+/* ════════════════════════════════════════════
+   ESTILOS BITMAP
+   ════════════════════════════════════════════ */
+.panel-bitmap {
+  background: var(--surface);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  margin: 12px;
+  box-shadow: var(--sombra);
+}
+.panel-bitmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--borde);
+}
+.panel-bitmap-titulo {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--txt3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-bitmap-titulo::before {
+  content: '';
+  display: inline-block;
+  width: 2.5px; height: 14px;
+  background: linear-gradient(180deg, #7c3aed, #a855f7);
+  border-radius: 3px;
+}
+.panel-bitmap-leyenda {
+  display: flex;
+  gap: 12px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--txt3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.bml-bit0 { color: #64748b; }
+.bml-bit1 { color: #7c3aed; }
+
+.panel-bitmap-body {
+  padding: 10px 12px;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 220px;
+}
+.bitmap-fila {
+  display: flex;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  min-width: max-content;
+}
+.bitmap-label {
+  width: 36px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--txt3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.bitmap-byte-grupo {
+  display: flex;
+  flex-wrap: nowrap !important;
+  gap: 3px;
+  margin-right: 10px;
+  padding: 3px 4px;
+  background: var(--surface2);
+  border-radius: 6px;
+  border: 1px solid var(--borde);
+}
+.bitmap-bit {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 4px;
+  font-weight: 800;
+  cursor: default;
+  transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+  font-family: 'JetBrains Mono', monospace;
+  position: relative;
+}
+.bitmap-bit:hover {
+  transform: scale(1.15);
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+.bitmap-bit-0 {
+  background: var(--surface);
+  color: var(--txt4);
+  border: 1px solid var(--borde);
+}
+.bitmap-bit-1 {
+  background: var(--rojo); /* default if no color */
+  color: #fff;
+  border: 1px solid rgba(0,0,0,0.15);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.bitmap-bit.recien-cambiado {
+  animation: bitFlip .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes bitFlip {
+  0%   { transform: scale(0.5) rotateY(90deg); opacity:0; }
+  60%  { transform: scale(1.15) rotateY(0deg); }
+  100% { transform: scale(1); opacity:1; }
+}
+   ESTILOS EXTENSIONES
+   ════════════════════════════════════════════ */
+.bloque-disco-ext-inicio {
+  border-left: 3px solid rgba(255,255,255,.85) !important;
+}
+.bloque-disco-ext-fin {
+  border-right: 3px solid rgba(255,255,255,.85) !important;
+}
+.bd-ext-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 7px;
+  font-weight: 900;
+  background: rgba(255,255,255,.28);
+  color: rgba(255,255,255,.95);
+  border-radius: 3px;
+  padding: 0 2px;
+  line-height: 1.5;
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════
+   ESTILOS BLOQUE TIPO FAT e INDICE2
+   ════════════════════════════════════════════ */
+.bloque-disco-fat {
+  border: 2px solid rgba(255,255,255,.8) !important;
+}
+.bloque-disco-indice2 {
+  border: 2px dotted rgba(255,255,255,.5) !important;
+}
+.bloque-disco-fat .bd-numero,
+.bloque-disco-indice2 .bd-numero { color: rgba(255,255,255,.7); }
+.bloque-disco-fat .bd-contenido,
+.bloque-disco-indice2 .bd-contenido {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.3);
+  font-size: 9px;
+}
+
+/* ════════════════════════════════════════════
+   GRILLA DE MÉTODOS (wrapping en múltiples filas)
+   ════════════════════════════════════════════ */
+.lista-algo-horizontal {
+  flex-wrap: wrap !important;
+  gap: 8px;
+}
+.tarjeta-algo {
+  min-width: 140px;
+  flex: 1 1 140px;
+}
+
+/* ════════════════════════════════════════════
+   FLECHAS SVG DINÁMICAS DE PUNTEROS
+   ════════════════════════════════════════════ */
+@keyframes dibujarFlecha {
+  from { stroke-dashoffset: var(--len, 200); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Permitir que el SVG de flechas sea visible más allá del contenedor */
+.grilla-disco-wrap {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* ════════════════════════════════════════════
+   PANEL DE BITMAP
+   ════════════════════════════════════════════ */
+.panel-bitmap {
+  padding: 14px 10px 10px;
+  background: var(--surface2);
+  border-radius: 10px;
+  border: 1px solid var(--borde);
+}
+.panel-bitmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.panel-bitmap-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt);
+}
+.panel-bitmap-leyenda {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--txt3);
+}
+.bml-bit0, .bml-bit1 {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border-radius: 3px;
+  text-align: center;
+  line-height: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+.bml-bit0 { background: var(--surface3); color: var(--txt3); border: 1px solid var(--borde); }
+.bml-bit1 { background: var(--acento); color: #fff; }
+
+.panel-bitmap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+/* ════════════════════════════════════════════
+   BLOQUES CON EXTENSIONES
+   ════════════════════════════════════════════ */
+.bloque-disco-ext-inicio {
+  border-left: 3px solid rgba(255,255,255,0.9) !important;
+}
+.bloque-disco-ext-fin {
+  border-right: 3px solid rgba(255,255,255,0.9) !important;
+}
+.bd-ext-badge {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 7px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  line-height: 1;
+  pointer-events: none;
 }

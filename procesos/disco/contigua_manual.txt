@@ -1,0 +1,16 @@
+# Asignación CONTIGUA — Modo Manual
+# ====================================
+# Método: Contigua → Variante: Manual
+# Formato: archivo, inicio, longitud
+#
+# El inicio y la longitud se especifican directamente.
+# El simulador asigna los bloques [inicio..inicio+longitud-1].
+# Permite simular fragmentación externa al dejar huecos.
+#
+# Disco recomendado: 50 bloques, bloque 512 bytes
+# ====================================
+AA, 0, 5
+BB, 10, 3
+CC, 20, 8
+DD, 30, 4
+EE, 40, 6
