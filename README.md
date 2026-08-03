@@ -1,6 +1,6 @@
-# SimuKernel — Simulador Unificado CPU + Memoria
+# SimuKernel — Simulador Unificado CPU, Memoria y Disco
 
-Simulador académico interactivo que integra planificación de CPU y gestión de memoria, con visualización dinámica y sincronizada paso a paso.
+Simulador académico interactivo que integra planificación de procesos (CPU), gestión de memoria principal y **asignación de espacio en disco**, con visualización dinámica y sincronizada paso a paso.
 
 ---
 
@@ -21,80 +21,82 @@ clic derecho en index.html → Open with Live Server
 
 ---
 
-## Algoritmos de CPU
+## Módulos del Simulador
 
+### 1. Algoritmos de CPU
 - **FCFS** — First Come, First Served (no expropiativo)
 - **SJF** — Shortest Job First (no expropiativo)
 - **RR** — Round Robin con quantum configurable
 - **SRT** — Shortest Remaining Time (expropiativo)
 
-## Algoritmos de Memoria
-
+### 2. Algoritmos de Memoria
 - **First Fit** — Asigna en el primer hueco que cumple
 - **Best Fit** — Asigna en el hueco más ajustado
 - **Worst Fit** — Asigna en el hueco más grande
 - **Buddy System** — Asigna en bloques de tamaño potencia de 2 con splitting/merging
+* Políticas de partición: **Dinámica** (bloques variables) y **Fija** (tamaños definidos por el usuario).
 
-## Políticas de Partición
-
-- **Dinámica** — Bloques variables según necesidad (FF/BF/WF/Buddy)
-- **Fija** — Particiones de tamaño fijo definidas por el usuario
+### 3. Asignación de Espacio en Disco (Nuevo)
+- **Contigua** — Asigna bloques físicos consecutivos.
+- **Enlazada** — Bloques dispersos unidos por punteros internos.
+- **Indexada** — Un bloque índice centraliza los punteros de datos.
+- **FAT (Tabla de Asignación)** — Variación de enlazada con los punteros extraídos a una tabla externa en memoria.
+- **Indexada Multi-Nivel** — Árbol jerárquico de índices (raíz, nivel 1, nivel 2) para archivos de gran tamaño.
+- **Extensiones (Extents)** — Agrupación masiva de bloques contiguos indicando (inicio, longitud).
+- **Mapa de Bits (Bitmap)** — Escaneo y gestión de espacio libre a nivel binario.
+* Modalidades soportadas: **Manual** (el usuario define punteros exactos) y **Automática** (el kernel escanea y asigna libremente el espacio).
 
 ---
 
 ## Formato de Entrada
 
-```
-P1, 0, 5, 50
-P2, 1, 3, 30
-```
+**Para CPU/Memoria:**
+`P1, 0, 5, 50` (Nombre, Llegada, Ejecución, TamañoKB)
 
-Columnas: `Nombre, Llegada, Ejecución, TamañoKB`
+**Para Disco (Automático):**
+`App1, 15` (Nombre, Bloques requeridos)
 
-Separadores: `,` `;` o tabulación. Líneas con `#` o `//` se ignoran.
+**Para Disco (Manual):**
+Depende del algoritmo (secuencias de punteros, jerarquías de índices, pares de extensiones, etc.). Ver la tabla de ayuda interactiva dentro del simulador.
+
+Separadores aceptados: `,` `;` o tabulación. Las líneas que inician con `#` o `//` se ignoran.
 
 ---
 
 ## Funcionamiento
 
-1. **Página Parámetros** — Carga archivo CSV o edita la tabla manual. Selecciona algoritmos de CPU y memoria, quantum, memoria total, reserva para SO y política de particiones.
-
-2. **Página Gráfica** — Visualiza el diagrama de Gantt (CPU) y el mapa de memoria sincronizados. Navega paso a paso con Avanzar/Retroceder o usa AutoPlay.
-
-3. **Página Tablas** — Muestra métricas detalladas por proceso: tiempos de espera, retorno y respuesta (CPU), y asignación por partición con direcciones de inicio y fin (memoria).
+1. **Página Parámetros** — Carga archivos de prueba (TXT) o ingresa datos manualmente. Configura los algoritmos, capacidades y políticas según el módulo a evaluar (CPU/Mem, o Disco).
+2. **Página Gráfica** — Visualización en tiempo real. Reproduce las simulaciones paso a paso (adelante/atrás) o mediante AutoPlay. Observa el diagrama de Gantt, mapas de memoria y cuadrículas de disco interactuando simultáneamente.
+3. **Página Tablas / Resultados** — Monitorea métricas consolidadas: tiempos de espera (CPU), fragmentación externa y operaciones E/S (Disco), y tablas de asignación de archivos y directorios.
 
 ---
 
-## Estructura del Proyecto
+## Estructura del Proyecto (Resumen)
 
-```
+```text
 sim-unificado/
-├── index.html                     ← Página principal (3 vistas)
-├── css/estilos.css                ← Estilos completos (~770 líneas)
+├── index.html                     ← Interfaz principal y navegación
+├── css/estilos.css                ← Hojas de estilo e interfaces UI/UX
 ├── js/
-│   ├── main.js                    ← Orquestador, eventos, simulación
-│   ├── parser.js                  ← Parseo de archivos y tabla manual
-│   ├── memoria/algoritmos.js      ← First/Best/Worst Fit, Buddy System
-│   ├── planificadores/algoritmos.js   ← FCFS, SJF, Round Robin, SRT
+│   ├── main.js                    ← Orquestador y control de simulaciones
+│   ├── parser.js                  ← Lector de archivos de entrada
+│   ├── memoria/algoritmos.js      ← Lógicas de gestión de memoria
+│   ├── planificadores/algoritmos.js ← Lógicas de CPU
+│   ├── disco/
+│   │   ├── mainDisco.js           ← Controlador de las vistas de disco
+│   │   └── algoritmos.js          ← Métodos avanzados (FAT, Extents, Bitmap, etc.)
 │   └── ui/
-│       ├── memRenderer.js         ← Renderizado del mapa de memoria
-│       ├── ganttRenderer.js       ← Renderizado del diagrama de Gantt
-│       ├── metricsRenderer.js     ← Métricas, tablas de resultados
-│       └── stepLog.js             ← Log de pasos y colas de procesos
-├── procesos_5.txt .. _100.txt     ← Datos de prueba (5 a 100 procesos)
+│       ├── discoRenderer.js       ← Motor de renderizado visual 3D/Grillas para disco
+│       ├── memRenderer.js         ← Gráficas de memoria y bloques
+│       ├── ganttRenderer.js       ← Gráfica temporal del procesador
+│       └── metricsRenderer.js     ← Paneles de métricas y bitácoras
+├── procesos/                      ← Set de datos de prueba preconfigurados
+├── informe_latex2/                ← Reporte del análisis técnico en LaTeX
 └── README.md
 ```
 
 ---
 
-## Notas Técnicas
-
-- **Buddy System** requiere que la memoria libre inicial sea potencia de 2. Si no lo es, se redondea hacia abajo y se notifica en consola.
-- Las particiones fijas se definen como lista separada por comas (ej: `100,200,50`).
-- La simulación puede inspeccionarse paso a paso en la vista Gráfica.
-
----
-
 ## Licencia
 
-Uso académico. Proyecto educativo para la materia de Sistemas Operativos.
+Uso académico. Proyecto educativo desarrollado para el curso de Sistemas Operativos.
