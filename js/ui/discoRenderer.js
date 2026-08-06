@@ -86,9 +86,10 @@ export function renderizarGrillaDisco(snapshot, totalBloques, metodo, pasoActual
             break;
           case 'enlazada':
           case 'fat':
-            contenidoTexto = (bloque.puntero !== undefined && bloque.puntero !== null)
+            // Bloques intermedios muestran el puntero al siguiente; el último muestra -1
+            contenidoTexto = (bloque.puntero !== undefined && bloque.puntero !== null && bloque.puntero >= 0)
               ? String(bloque.puntero)
-              : (bloque.archivo || '');
+              : '-1';
             break;
           case 'indexada':
           case 'indexada-ml':
@@ -332,10 +333,10 @@ export function renderizarTablaMetadatos(metadatos, metodo) {
       encabezados = ['Archivo', 'Inicio', 'Longitud'];
       break;
     case 'enlazada':
-      encabezados = ['Archivo', 'Inicio', 'Final'];
+      encabezados = ['Archivo', 'Inicio', 'Final', 'Cadena de Punteros'];
       break;
     case 'indexada':
-      encabezados = ['Archivo', 'Bloque Índice'];
+      encabezados = ['Archivo', 'Bloque Índice', 'Punteros de Datos'];
       break;
     case 'fat':
       encabezados = ['Archivo', 'Inicio', 'Final', 'Bloques', 'FAT'];
@@ -372,11 +373,19 @@ export function renderizarTablaMetadatos(metadatos, metodo) {
         htmlFila += `<td>${meta.longitud !== undefined ? meta.longitud : '—'}</td>`;
         break;
       case 'enlazada':
-        htmlFila += `<td>${meta.inicio !== undefined ? meta.inicio : '—'}</td>`;
-        htmlFila += `<td>${meta.final !== undefined ? meta.final : '—'}</td>`;
+        {
+          const ptrStr = Array.isArray(meta.punteros) ? meta.punteros.join(' ➔ ') + ' ➔ -1' : '—';
+          htmlFila += `<td>${meta.inicio !== undefined ? meta.inicio : '—'}</td>`;
+          htmlFila += `<td>${meta.final !== undefined ? meta.final : '—'}</td>`;
+          htmlFila += `<td style="font-size:0.75rem;color:var(--texto-sec)">${ptrStr}</td>`;
+        }
         break;
       case 'indexada':
-        htmlFila += `<td>${meta.bloqueIndice !== undefined ? meta.bloqueIndice : '—'}</td>`;
+        {
+          const ptrStr = Array.isArray(meta.punteros) ? `[ ${meta.punteros.join(', ')} ]` : '—';
+          htmlFila += `<td>${meta.bloqueIndice !== undefined ? meta.bloqueIndice : '—'}</td>`;
+          htmlFila += `<td style="font-size:0.75rem;color:var(--texto-sec)">${ptrStr}</td>`;
+        }
         break;
       case 'fat': {
         // Mostrar la FAT como cadena compacta: bloque→siguiente
@@ -462,16 +471,11 @@ function _etiquetaTipoDisco(tipo) {
  * Convierte la descripción técnica de un paso en un mensaje amigable y fácil de entender.
  */
 function _mensajeAmigable(paso, numeroPaso) {
-  const { tipo, archivo, descripcion } = paso;
+  const { tipo, archivo, descripcion, bloquesAfectados } = paso;
   const nom = archivo || '?';
 
-  // Extraer primer número de la descripción (número de bloque)
-  const numMatch = descripcion ? descripcion.match(/(\d+)/) : null;
-  const blk = numMatch ? numMatch[1] : '?';
-
-  // Extraer segundo número (destino del puntero)
-  const nums = descripcion ? [...descripcion.matchAll(/(\d+)/g)] : [];
-  const blkDest = nums.length > 1 ? nums[1][1] : null;
+  // Usar el número real del bloque desde bloquesAfectados (más fiable que regex)
+  const blk = (bloquesAfectados && bloquesAfectados.length > 0) ? bloquesAfectados[0] : '?';
 
   switch (tipo) {
     case 'ok':
@@ -480,23 +484,36 @@ function _mensajeAmigable(paso, numeroPaso) {
       }
       return `El archivo "${nom}" ocupa el bloque número ${blk}.`;
 
-    case 'puntero':
-      if (blkDest) {
-        return `Bloque ${blk} guardado. Su puntero apunta al siguiente bloque (${blkDest}).`;
+    case 'puntero': {
+      // Extraer el destino del puntero con un regex específico al formato
+      const apuntaMatch = descripcion ? descripcion.match(/apunta al bloque (\d+)/) : null;
+      const finCadena   = descripcion ? descripcion.includes('fin de cadena') : false;
+      if (finCadena) {
+        return `Bloque ${blk} guardado. Es el último bloque del archivo "${nom}" (puntero → -1).`;
       }
-      return `Bloque ${blk} guardado. Este es el último bloque del archivo "${nom}" (EOF).`;
+      if (apuntaMatch) {
+        return `Bloque ${blk} guardado. Su puntero apunta al siguiente bloque (${apuntaMatch[1]}).`;
+      }
+      return `Bloque ${blk} guardado (archivo "${nom}").`;
+    }
 
-    case 'indice':
+    case 'indice': {
       return `Se creó el Índice del archivo "${nom}" en el bloque ${blk}. Desde ahí se llega a todos sus datos.`;
+    }
 
-    case 'indice2':
+    case 'indice2': {
       return `Índice secundario en bloque ${blk} — apunta a los datos del archivo "${nom}".`;
+    }
 
-    case 'fat':
-      if (blkDest && descripcion.includes('EOF')) {
-        return `Tabla FAT: bloque ${blk} marcado como el último del archivo "${nom}" (fin de cadena).`;
+    case 'fat': {
+      // Extraer el siguiente bloque FAT con regex específico
+      const fatMatch = descripcion ? descripcion.match(/FAT\[\d+\]=(-?\d+)/) : null;
+      const fatDest  = fatMatch ? fatMatch[1] : null;
+      if (fatDest === '-1') {
+        return `Tabla FAT: bloque ${blk} marcado como el último del archivo "${nom}" (fin de cadena, → -1).`;
       }
-      return `Tabla FAT: bloque ${blk} → siguiente bloque ${blkDest || '?'}. Se actualiza la tabla central.`;
+      return `Tabla FAT: bloque ${blk} → siguiente bloque ${fatDest || '?'}. Se actualiza la tabla central.`;
+    }
 
     case 'bitmap':
       if (descripcion && descripcion.includes('escaneando')) {
@@ -514,15 +531,16 @@ function _mensajeAmigable(paso, numeroPaso) {
       if (descripcion && descripcion.includes('ya ocupados')) {
         return `No se puede guardar "${nom}": algunos bloques elegidos ya están en uso por otro archivo.`;
       }
-      if (descripcion && descripcion.includes('fuera del rango')) {
+      if (descripcion && descripcion.includes('fuera de rango')) {
         return `Los bloques para "${nom}" están fuera del disco. Revisa los números de bloque.`;
       }
-      return `Error al guardar el archivo "${nom}".`;
+      return descripcion || `Error al guardar el archivo "${nom}".`;
 
     default:
       return descripcion || `Paso ${numeroPaso} — ${nom}`;
   }
 }
+
 
 /**
  * Agrega una entrada de paso al log de disco (#logPasosDisco).
@@ -558,11 +576,11 @@ export function agregarPasoLogDisco(paso, numeroPaso, metadatos = []) {
   const ioHtml = esInfo
     ? ''
     : `<div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-        <span style="display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: #0f766e; background: #f0fdfa; padding: 3px 6px; border-radius: 6px; border: 1px solid #ccfbf1; box-shadow: 0 1px 2px rgba(0,0,0,0.02)">
+        <span style="display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--teal2); background: var(--teal-l); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--teal-l); box-shadow: 0 1px 2px rgba(0,0,0,0.02)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
           LECTURAS: ${lecturas}
         </span>
-        <span style="display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: #9f1239; background: #fff1f2; padding: 3px 6px; border-radius: 6px; border: 1px solid #ffe4e6; box-shadow: 0 1px 2px rgba(0,0,0,0.02)">
+        <span style="display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--rose2); background: var(--rose-l); padding: 3px 6px; border-radius: 6px; border: 1px solid var(--rose-l); box-shadow: 0 1px 2px rgba(0,0,0,0.02)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
           ESCRITURAS: ${escrituras}
         </span>

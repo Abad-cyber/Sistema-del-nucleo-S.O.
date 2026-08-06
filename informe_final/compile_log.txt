@@ -1,0 +1,226 @@
+﻿This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex.fmt)
+ restricted \write18 enabled.
+entering extended mode
+(informe_final.tex
+LaTeX2e <2025-11-01>
+L3 programming layer <2025-12-24>
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/base\size12.clo))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/base\inputenc.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/babel\babel.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/babel\txtbabel.def)
+*************************************
+* Local config file bblopts.cfg used
+*
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/arabi\bblopts.cfg)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/babel/locale/es\babel
+-spanish.tex)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/babel-spanish\spanish.l
+df))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\keyval.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifvtex.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/iftex\iftex.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.cfg))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\times.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/setspace\setspace.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphics.c
+fg)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\pdftex.def
+))) (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/float\float.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/booktabs\booktabs.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/tools\tabularx.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/tools\array.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption3.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/caption\subcaption.sty)
+
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape.sty
+
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape-nom
+etadata.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\lscape.sty)))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsmath.sty
+For additional information on amsmath, use the `?' option.
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amstext.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsgen.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsbsy.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsopn.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amsfonts.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amssymb.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/listings\listings.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstpatch.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstmisc.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/listings\listings.cfg))
+==> First Aid for listings.sty no longer applied!
+    Expected:
+        2024/09/23 1.10c (Carsten Heinz)
+    but found:
+        2025/11/14 1.11b (Carsten Heinz)
+    so I'm assuming it got fixed.
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/xcolor\xcolor.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\color.cfg)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/graphics\mathcolor.ltx)
+)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/algorithms\algorithm.st
+y (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/base\ifthen.sty))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algpseudoc
+ode.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algorithmi
+cx.sty
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+)
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hyperref.sty
+
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/kvsetkeys\kvsetkeys.sty
+)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/kvdefinekeys\kvdefine
+keys.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/pdfescape\pdfescape.s
+ty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/ltxcmds\ltxcmds.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/pdftexcmds\pdftexcmds
+.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/infwarerr\infwarerr.s
+ty)))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hycolor\hycolor.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\nameref.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/refcount\refcount.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/gettitlestring\gettit
+lestring.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/kvoptions\kvoptions.sty
+)))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/etoolbox\etoolbox.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringenc.s
+ty) (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
+) (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/intcalc\intcalc.sty
+) (C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/url\url.sty)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/bigintcalc\bigintcalc
+.sty)))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hpdftex.def
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\rerunfil
+echeck.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/generic/uniquecounter\uniquec
+ounter.sty)))
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1ptm.fd)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdf
+tex.def) (informe_final.aux)
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
+ii
+[Loading MPS to PDF converter (version 2006.09.02).]
+)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-b
+ase.sty
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/00miktex\epstopdf-sys.c
+fg)) (informe_final.out) (informe_final.out)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd)
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd)
+[1{C:/Users/abadp/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/ab
+adp/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}]
+(informe_final.toc
+pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
+been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.32 ...ión Analítica en Código}{13}{section.5}
+                                                  % [1]) [2] (informe_final.lof
+) [3] (informe_final.lot) [4] [5] [6] [7]
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd)
+[8] [9]
+Overfull \hbox (0.44702pt too wide) in paragraph at lines 238--239
+\OT1/ptm/m/n/12 di-mien-to del al-ma-ce-na-mien-to se-cun-da-rio se eval[]ua co
+n las si-guien-tes m[]etri-cas (Sta-llings, 2018): 
+[10]
+Overfull \hbox (2.86821pt too wide) in paragraph at lines 249--250
+[]\OT1/ptm/m/n/12 Adicionalmente, pa-ra eva-luar el im-pac-to es-truc-tu-ral de
+ los me-ta-da-tos se em-plea el \OT1/ptm/b/n/12 Overhead
+[11] [12]
+(C:\Users\abadp\AppData\Local\Programs\MiKTeX\tex/latex/listings\lstlang1.sty)
+[13] [14]
+Overfull \hbox (12.16429pt too wide) in alignment at lines 391--391
+[][][] 
+[15] [16] [17]
+Underfull \hbox (badness 10000) in alignment at lines 440--440
+[][] 
+[18] [19] [20] [21]
+Overfull \hbox (14.73953pt too wide) in paragraph at lines 548--548
+[]|\OT1/ptm/b/n/12 Observaci[]on
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+[]|\OT1/ptm/m/n/12 Concentra
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 car-ga al
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+[]|\OT1/ptm/m/n/12 Te[]ori-
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 ca-men-te
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 ideal,
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 pr[]acti-
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 ca-men-te
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+[]|\OT1/ptm/m/n/12 Genera
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 hue-cos
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 re-si-dua-les
+
+Overfull \hbox (13.62334pt too wide) in paragraph at lines 548--548
+[]|\OT1/ptm/m/n/12 Coalescencia
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 ul-trarr[]api-
+
+Underfull \hbox (badness 10000) in paragraph at lines 548--548
+\OT1/ptm/m/n/12 da, ideal
+[22]
+Overfull \hbox (69.92667pt too wide) in alignment at lines 569--569
+[][][][][] 
+[23]
+Overfull \hbox (9.52731pt too wide) in paragraph at lines 588--589
+\OT1/ptm/m/it/12 Joint Com-pu-ter Con-fe-ren-ce\OT1/ptm/m/n/12 , 335-344. []$\O
+T1/pcr/m/n/12 https : / / doi . org / 10 . 1145 / 1460833 . 1460871$[] 
+[24] [25] (informe_final.aux) )
+(see the transcript file for additional information)<C:/Users/abadp/AppData/Loc
+al/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/abadp/Ap
+pData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users
+/abadp/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><
+C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr
+12.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfont
+s/cm/cmr8.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/type1/public/
+amsfonts/cm/cmsy10.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/type
+1/urw/courier/ucrb8a.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/ty
+pe1/urw/courier/ucrr8a.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/
+type1/urw/times/utmb8a.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/
+type1/urw/times/utmr8a.pfb><C:/Users/abadp/AppData/Local/Programs/MiKTeX/fonts/
+type1/urw/times/utmri8a.pfb>
+Output written on informe_final.pdf (26 pages, 261510 bytes).
+Transcript written on informe_final.log.
+pdflatex : pdflatex: major issue: So far, you have not checked for MiKTeX updates.
+En línea: 1 Carácter: 1
++ pdflatex -interaction=nonstopmode informe_final.tex 2>&1 | Out-File - ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (pdflatex: major...MiKTeX updates.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

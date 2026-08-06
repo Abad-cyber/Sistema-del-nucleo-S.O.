@@ -1,18 +1,8 @@
-# Asignación INDEXADA Simple (Indexed Allocation)
-# ==================================================
-# Método: Indexada
-# Formato: archivo, bloque_indice, dato1, dato2, dato3, ...
-#
-# Cada archivo tiene UN bloque índice que almacena los punteros
-# a todos sus bloques de datos.
-# El bloque índice ocupa espacio pero permite acceso directo a cualquier bloque.
-#
-# La tabla de punteros en el bloque índice permite O(1) acceso al bloque N.
-#
-# Disco recomendado: 120 bloques, bloque 512 bytes, puntero 4 bytes
-# ==================================================
-AA, 10, 1, 7, 3, 6, 9
-BB, 20, 11, 15, 18, 22, 26, 29
-CC, 30, 25, 27, 31, 35
-DD, 40, 35, 37, 41, 45, 48
-EE, 50, 51, 52, 53, 54, 55, 56, 57
+# Asignación Indexada (7 archivos)
+SISTEMA, 5
+KERNEL, 3
+APP_C, 7
+USER_DOCS, 15
+TEMP_3, 5
+DB_MAIN, 25
+LOGS, 6

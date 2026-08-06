@@ -1,0 +1,28 @@
+INSTRUCCIONES PARA TOMAR LAS CAPTURAS DE PANTALLA
+(Nómbralas exactamente así y súbelas por aquí)
+
+MÓDULO: CPU + MEMORIA
+* Datos Base (CPU): P1(llegada 0, ráfaga 7). P2(llegada 2, ráfaga 4). P3(llegada 4, ráfaga 1). P4(llegada 5, ráfaga 4).
+
+1. IMAGEN_3.png: Toma una captura a la tabla con los procesos base ya ingresados en la interfaz antes de simular.
+2. IMAGEN_4.png: Selecciona FCFS y ejecuta. Toma captura al Diagrama de Gantt resultante junto con sus métricas.
+3. IMAGEN_5.png: Selecciona SJF y ejecuta. Captura el Gantt donde se vea a P3 ejecutándose antes por ser más corto, y sus métricas.
+4. IMAGEN_6.png: Selecciona SRT y ejecuta. Captura el Gantt donde se noten los cortes (las interrupciones) de los procesos, y sus métricas.
+5. IMAGEN_7.png: Selecciona Round Robin (Quantum = 2) y ejecuta. Captura el Gantt segmentado equitativamente.
+
+* Datos Base (Memoria): Mem total = 1024, SO = 100. Procesos: P1(120), P2(50), P3(200), P4(80).
+6. IMAGEN_8.png: Selecciona First Fit y simula un escenario de asignación y liberación. Toma captura al Mapa de Memoria.
+7. IMAGEN_9.png: Selecciona Best Fit con el mismo escenario. Toma captura al Mapa de Memoria.
+8. IMAGEN_10.png: Selecciona Buddy System. Toma captura del Mapa de Memoria evidenciando los bloques particionados en potencias de 2.
+
+MÓDULO: ALMACENAMIENTO (DISCO)
+9. IMAGEN_11.png: Selecciona "Contigua". Ejecuta y toma captura del grid resaltando el problema o el mapa base.
+10. IMAGEN_12.png: Selecciona "Enlazada". Toma captura de la dispersión de bloques conectados por flechas/punteros.
+11. IMAGEN_13.png: Selecciona "Indexada". Toma captura del bloque índice apuntando a sus respectivos datos.
+12. IMAGEN_14.png: Selecciona "FAT". Toma captura de la tabla FAT renderizada.
+13. IMAGEN_15.png: Selecciona "Multinivel". Toma captura donde se aprecie el índice primario enlazando a índices secundarios.
+14. IMAGEN_16.png: Selecciona "Extents". Toma captura del panel que muestra la tupla Inicio-Longitud.
+15. IMAGEN_17.png: Selecciona "Bitmap". Toma captura de la matriz visual binaria (1s y 0s).
+
+16. IMAGEN_PARAM_CPU.png: Captura vertical del panel de par�metros (barra lateral izquierda) cuando est�s en el m�dulo de CPU y Memoria.
+17. IMAGEN_PARAM_DISCO.png: Captura vertical del panel de par�metros cuando est�s en el m�dulo de Disco.

@@ -1,0 +1,13 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {figure}{\numberline {1}{\ignorespaces Gantt de FCFS: P2 y P3 sufren penalización de espera desproporcionada.}}{16}{figure.caption.5}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Gantt de SJF: Selección inteligente tras la finalización de P1.}}{17}{figure.caption.6}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Gantt de SRT: Interrupciones agresivas y optimización extrema de respuestas cortas.}}{17}{figure.caption.7}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Gantt de RR: Ejecución intercalada y simétrica.}}{18}{figure.caption.8}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Estado de la memoria RAM tras las asignaciones y desasignaciones dinámicas.}}{18}{figure.caption.10}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Fallo de contigüidad y elevación rápida de fragmentación externa.}}{19}{figure.caption.11}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Mapeo disperso y cadena de bloques enlazados.}}{19}{figure.caption.12}%
+\contentsline {figure}{\numberline {8}{\ignorespaces El bloque índice funge como concentrador radial (Hub) de los bloques.}}{20}{figure.caption.13}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Tabla FAT separada resolviendo los punteros.}}{20}{figure.caption.14}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Despliegue del árbol de Inodos de múltiples niveles.}}{20}{figure.caption.15}%
+\contentsline {figure}{\numberline {11}{\ignorespaces Asignación compactada mediante Extents.}}{21}{figure.caption.16}%
+\contentsline {figure}{\numberline {12}{\ignorespaces Representación en Bit Array de 0s y 1s de la superficie del disco.}}{21}{figure.caption.17}%

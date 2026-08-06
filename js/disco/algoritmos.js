@@ -144,7 +144,7 @@ export function calcularMetricasDisco(snapshot, totalBloques) {
  * @param {Number} totalBloques - Tamaño del disco en bloques
  * @returns {{ snapshots: Array, pasos: Array, metadatos: Array, metricas: Object }}
  */
-export function simularAsignacionContigua(archivos, totalBloques, variante = 'manual') {
+export function simularAsignacionContigua(archivos, totalBloques, variante = 'ff') {
   const snapshots = [];
   const pasos = [];
   const metadatos = [];
@@ -162,18 +162,29 @@ export function simularAsignacionContigua(archivos, totalBloques, variante = 'ma
     let { nombre, inicio, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(nombre, 'error', `Error: Parámetros inválidos para "${nombre}". Longitud debe ser un número mayor a 0.`, [], 0, 0));
       snapshots.push(clonarSnapshot(discoActual));
       return;
     }
 
-    if (variante === 'manual' && isNaN(inicio)) {
-      pasos.push(crearPaso(nombre, 'error', `Error: Parámetros inválidos para "${nombre}". Inicio debe ser numérico.`, [], 0, 0));
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
       snapshots.push(clonarSnapshot(discoActual));
       return;
     }
-    
+
     // Si la variante es First Fit, Best Fit o Worst Fit, calcular el 'inicio'
     if (variante === 'ff' || variante === 'bf' || variante === 'wf') {
       const huecos = [];
@@ -198,27 +209,64 @@ export function simularAsignacionContigua(archivos, totalBloques, variante = 'ma
       const huecosSuficientes = huecos.filter(h => h.tamaño >= longitud);
       
       if (huecosSuficientes.length === 0) {
-        pasos.push(crearPaso(
-          nombre,
-          'error',
-          `Error: No hay espacio contiguo suficiente para el archivo "${nombre}" (${longitud} bloques). Variante: ${variante.toUpperCase()}.`,
-          [],
-          0,
-          0
-        ));
-        snapshots.push(clonarSnapshot(discoActual));
-        return; // Saltar este archivo
-      }
-
-      if (variante === 'ff') {
-        inicio = huecosSuficientes[0].inicio;
-      } else if (variante === 'bf') {
-        huecosSuficientes.sort((a, b) => a.tamaño - b.tamaño);
-        inicio = huecosSuficientes[0].inicio;
-      } else if (variante === 'wf') {
-        // Worst Fit: elegir el hueco MÁS GRANDE disponible
-        huecosSuficientes.sort((a, b) => b.tamaño - a.tamaño);
-        inicio = huecosSuficientes[0].inicio;
+        const totalLibres = discoActual.filter(b => b.tipo === 'libre').length;
+        if (totalLibres >= longitud) {
+          pasos.push(crearPaso(
+            nombre,
+            'warn',
+            `Fragmentación externa detectada. Compactando el disco para asignar "${nombre}"...`,
+            [],
+            0,
+            0
+          ));
+          
+          let writeIdx = 0;
+          let moved = 0;
+          
+          for (let r = 0; r < totalBloques; r++) {
+            if (discoActual[r].tipo !== 'libre') {
+              if (r !== writeIdx) {
+                discoActual[writeIdx] = { ...discoActual[r], index: writeIdx };
+                discoActual[r] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: r };
+                moved++;
+              }
+              writeIdx++;
+            }
+          }
+          
+          pasos.push(crearPaso(
+            nombre,
+            'ok',
+            `Compactación completada. Se desplazaron bloques para generar un espacio contiguo.`,
+            [],
+            moved,
+            moved
+          ));
+          snapshots.push(clonarSnapshot(discoActual));
+          
+          inicio = writeIdx;
+        } else {
+          pasos.push(crearPaso(
+            nombre,
+            'error',
+            `Error: No hay espacio suficiente ni siquiera compactando (Libre: ${totalLibres}, Requerido: ${longitud}).`,
+            [],
+            0,
+            0
+          ));
+          snapshots.push(clonarSnapshot(discoActual));
+          return;
+        }
+      } else {
+        if (variante === 'ff') {
+          inicio = huecosSuficientes[0].inicio;
+        } else if (variante === 'bf') {
+          huecosSuficientes.sort((a, b) => a.tamaño - b.tamaño);
+          inicio = huecosSuficientes[0].inicio;
+        } else if (variante === 'wf') {
+          huecosSuficientes.sort((a, b) => b.tamaño - a.tamaño);
+          inicio = huecosSuficientes[0].inicio;
+        }
       }
     }
 
@@ -343,7 +391,7 @@ export function simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero
     const { nombre, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(
         nombre, 'error', `Error: El archivo "${nombre}" requiere una longitud mayor a 0.`, [], 0, 0
       ));
@@ -351,38 +399,39 @@ export function simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero
       return;
     }
 
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: i };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
+      snapshots.push(clonarSnapshot(discoActual));
+      return;
+    }
+
     let secuencia = [];
 
-    if (variante === 'manual') {
-      secuencia = archivo.secuencia || [];
-      if (secuencia.length === 0 || secuencia.some(isNaN)) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere una secuencia de bloques numéricos válida.`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      // Validar rango y ocupados
-      const fueraRango = secuencia.filter(b => b < 0 || b >= totalBloques);
-      if (fueraRango.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" usa bloques fuera de rango: ${fueraRango.join(', ')}.`, fueraRango, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      const ocupados = secuencia.filter(b => discoActual[b].tipo !== 'libre');
-      if (ocupados.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" intenta usar bloques ocupados: ${ocupados.join(', ')}.`, ocupados, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      pasos.push(crearPaso(nombre, 'creacion', `Asignación manual para "${nombre}" en bloques: [${secuencia.join(', ')}].`, secuencia, 0, 0));
-    } else {
+    
       // Escanear disco para encontrar N bloques libres
       let todosLibres = [];
       for (let i = 0; i < totalBloques; i++) {
         if (discoActual[i].tipo === 'libre') todosLibres.push(i);
       }
 
+      // Dispersar bloques aleatoriamente (como un SO real con fragmentación)
       todosLibres.sort(() => Math.random() - 0.5);
       secuencia = todosLibres.slice(0, longitud);
+      // Ordenar numéricamente para que los punteros sean coherentes visualmente
+      secuencia.sort((a, b) => a - b);
+      // Mezclar de nuevo para simular acceso no contiguo
+      secuencia.sort(() => Math.random() - 0.5);
 
       // Validación: No hay espacio suficiente
       if (secuencia.length < longitud) {
@@ -400,7 +449,8 @@ export function simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero
         `Buscando ${longitud} bloques libres para "${nombre}"... Encontrados: [${secuencia.join(', ')}].`,
         secuencia, 0, 0
       ));
-    }
+      snapshots.push(clonarSnapshot(discoActual));
+    
 
     // ── Asignar bloques con punteros encadenados (Paso a paso) ──
     for (let i = 0; i < secuencia.length; i++) {
@@ -420,7 +470,7 @@ export function simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero
       // Lectura del bloque anterior para actualizar su puntero (costo de enlazada)
       if (i > 0) totalLecturas += 1;
 
-      const textoPuntero = siguienteBloque !== -1 ? `apunta al bloque ${siguienteBloque}` : `apunta a fin de archivo (EOF)`;
+      const textoPuntero = siguienteBloque !== -1 ? `apunta al bloque ${siguienteBloque}` : `fin de cadena (-1)`;
       const esUltimo = (i === secuencia.length - 1);
       const extras = esUltimo ? ` | Datos útiles/bloque: ${datosUtilesPorBloque}B` : '';
       const desc = `Archivo "${nombre}": bloque enlazado ${bloqueIdx} (${textoPuntero}).${extras}`;
@@ -437,13 +487,14 @@ export function simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero
       snapshots.push(clonarSnapshot(discoActual));
     }
 
-    // Registrar metadatos
-    metadatos.push({
-      archivo: nombre,
-      color,
-      inicio: secuencia[0],
-      final: secuencia[secuencia.length - 1]
-    });
+      // Registrar metadatos
+      metadatos.push({
+        archivo: nombre,
+        color,
+        inicio: secuencia[0],
+        final: secuencia[secuencia.length - 1],
+        punteros: secuencia
+      });
   });
 
   // Calcular métricas finales
@@ -489,10 +540,27 @@ export function simularAsignacionIndexada(archivos, totalBloques, tamanioPuntero
     const { nombre, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(
         nombre, 'error', `Error: El archivo "${nombre}" requiere una longitud mayor a 0.`, [], 0, 0
       ));
+      snapshots.push(clonarSnapshot(discoActual));
+      return;
+    }
+
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: i };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
       snapshots.push(clonarSnapshot(discoActual));
       return;
     }
@@ -513,31 +581,7 @@ export function simularAsignacionIndexada(archivos, totalBloques, tamanioPuntero
     let bloquesDatos = [];
     let todosLosBloques = [];
 
-    if (variante === 'manual') {
-      bloqueIndice = archivo.indice;
-      bloquesDatos = archivo.datos || [];
-      todosLosBloques = [bloqueIndice, ...bloquesDatos];
-      
-      if (bloqueIndice === undefined || isNaN(bloqueIndice) || bloquesDatos.length === 0 || bloquesDatos.some(isNaN)) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere un índice y datos en modo manual.`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      
-      const fueraRango = todosLosBloques.filter(b => b < 0 || b >= totalBloques);
-      if (fueraRango.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" usa bloques fuera de rango: ${fueraRango.join(', ')}.`, fueraRango, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      const ocupados = todosLosBloques.filter(b => discoActual[b].tipo !== 'libre');
-      if (ocupados.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" intenta usar bloques ocupados: ${ocupados.join(', ')}.`, ocupados, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      pasos.push(crearPaso(nombre, 'creacion', `Asignación manual para "${nombre}" en bloque índice ${bloqueIndice} y datos: [${bloquesDatos.join(', ')}].`, todosLosBloques, 0, 0));
-    } else {
+    
       // Buscar todos los bloques libres
       let todosLibres = [];
       for (let i = 0; i < totalBloques; i++) {
@@ -554,7 +598,7 @@ export function simularAsignacionIndexada(archivos, totalBloques, tamanioPuntero
         return;
       }
 
-      // Aleatorizar para esparcir por el disco
+      // Dispersar bloques aleatoriamente para demostrar que la asignación indexada no requiere contigüidad
       todosLibres.sort(() => Math.random() - 0.5);
       const bloquesLibres = todosLibres.slice(0, longitud + 1);
 
@@ -563,11 +607,12 @@ export function simularAsignacionIndexada(archivos, totalBloques, tamanioPuntero
         `Buscando ${longitud + 1} bloques libres para "${nombre}"... Encontrados.`,
         bloquesLibres, 0, 0
       ));
+      snapshots.push(clonarSnapshot(discoActual));
 
       bloqueIndice = bloquesLibres[0];
       bloquesDatos = bloquesLibres.slice(1);
       todosLosBloques = bloquesLibres;
-    }
+    
 
 
 
@@ -626,7 +671,8 @@ export function simularAsignacionIndexada(archivos, totalBloques, tamanioPuntero
     metadatos.push({
       archivo: nombre,
       color,
-      bloqueIndice
+      bloqueIndice,
+      punteros: bloquesDatos
     });
     // NOTA: NO se agrega snapshot extra aquí — el último bloque de datos ya lo hizo
   });
@@ -670,7 +716,7 @@ export function simularAsignacionFAT(archivos, totalBloques, tamanioBloque, vari
     const { nombre, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(
         nombre, 'error', `Error: El archivo "${nombre}" requiere una longitud mayor a 0.`, [], 0, 0
       ));
@@ -678,38 +724,37 @@ export function simularAsignacionFAT(archivos, totalBloques, tamanioBloque, vari
       return;
     }
 
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: i };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
+      snapshots.push(clonarSnapshot(discoActual));
+      return;
+    }
+
     let secuencia = [];
 
-    if (variante === 'manual') {
-      secuencia = archivo.secuencia || [];
-      if (secuencia.length === 0 || secuencia.some(isNaN)) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere una secuencia de bloques numéricos válida.`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      // Validar rango y ocupados
-      const fueraRango = secuencia.filter(b => b < 0 || b >= totalBloques);
-      if (fueraRango.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" usa bloques fuera de rango: ${fueraRango.join(', ')}.`, fueraRango, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      const ocupados = secuencia.filter(b => discoActual[b].tipo !== 'libre');
-      if (ocupados.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" intenta usar bloques ocupados: ${ocupados.join(', ')}.`, ocupados, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      pasos.push(crearPaso(nombre, 'creacion', `Asignación manual para "${nombre}" en bloques: [${secuencia.join(', ')}].`, secuencia, 0, 0));
-    } else {
+    
       // Escanear disco para encontrar N bloques libres
       let todosLibres = [];
       for (let i = 0; i < totalBloques; i++) {
         if (discoActual[i].tipo === 'libre') todosLibres.push(i);
       }
 
+      // Dispersar bloques aleatoriamente — FAT permite acceso no contiguo
       todosLibres.sort(() => Math.random() - 0.5);
       secuencia = todosLibres.slice(0, longitud);
+      // Mezclar para simular bloques dispersos en el disco físico
+      secuencia.sort(() => Math.random() - 0.5);
 
       // Validación: No hay espacio suficiente
       if (secuencia.length < longitud) {
@@ -727,7 +772,8 @@ export function simularAsignacionFAT(archivos, totalBloques, tamanioBloque, vari
         `Buscando ${longitud} bloques libres para "${nombre}"... Encontrados: [${secuencia.join(', ')}].`,
         secuencia, 0, 0
       ));
-    }
+      snapshots.push(clonarSnapshot(discoActual));
+    
 
     // Asignar bloques y actualizar FAT
     secuencia.forEach((bloqueIdx, i) => {
@@ -802,10 +848,27 @@ export function simularAsignacionIndexadaMultiNivel(archivos, totalBloques, tama
     const { nombre, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(
         nombre, 'error', `Error: El archivo "${nombre}" requiere una longitud mayor a 0.`, [], 0, 0
       ));
+      snapshots.push(clonarSnapshot(discoActual));
+      return;
+    }
+
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: i };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
       snapshots.push(clonarSnapshot(discoActual));
       return;
     }
@@ -826,44 +889,7 @@ export function simularAsignacionIndexadaMultiNivel(archivos, totalBloques, tama
     let bloquesDatos = [];
     let todosLosBloques = [];
 
-    if (variante === 'manual') {
-      bloqueIndice = archivo.raiz;
-      bloqueIndice2 = archivo.subindices || [];
-      bloquesDatos = archivo.datos || [];
-      todosLosBloques = [bloqueIndice, ...bloqueIndice2, ...bloquesDatos];
-      
-      if (bloqueIndice === undefined || isNaN(bloqueIndice) || bloqueIndice2.length === 0 || bloquesDatos.length === 0 || todosLosBloques.some(isNaN)) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere raíz, subíndices y datos numéricos válidos en modo manual.`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-
-      if (bloqueIndice2.length > maxPtrsBloque) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" excede la capacidad de la raíz (máx ${maxPtrsBloque} subíndices, provistos ${bloqueIndice2.length}).`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-
-      if (bloqueIndice2.length < numIndicesL2) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere al menos ${numIndicesL2} subíndices para mapear ${longitud} datos (solo se proveyeron ${bloqueIndice2.length}).`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      
-      const fueraRango = todosLosBloques.filter(b => b < 0 || b >= totalBloques);
-      if (fueraRango.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" usa bloques fuera de rango: ${fueraRango.join(', ')}.`, fueraRango, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      const ocupados = todosLosBloques.filter(b => discoActual[b].tipo !== 'libre');
-      if (ocupados.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" intenta usar bloques ocupados: ${ocupados.join(', ')}.`, ocupados, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      pasos.push(crearPaso(nombre, 'creacion', `Asignación manual para "${nombre}" en raíz ${bloqueIndice}, subíndices [${bloqueIndice2.join(', ')}] y datos [${bloquesDatos.join(', ')}].`, todosLosBloques, 0, 0));
-    } else {
+    
       const totalRequeridos = 1 + numIndicesL2 + longitud; // 1 raíz + N subíndices + datos
       let todosLibres = [];
       for (let i = 0; i < totalBloques; i++) {
@@ -878,6 +904,7 @@ export function simularAsignacionIndexadaMultiNivel(archivos, totalBloques, tama
         return;
       }
 
+      // Tomar bloques libres en orden secuencial — Dispersar bloques aleatoriamente
       todosLibres.sort(() => Math.random() - 0.5);
       const bloquesLibres = todosLibres.slice(0, totalRequeridos);
 
@@ -886,12 +913,13 @@ export function simularAsignacionIndexadaMultiNivel(archivos, totalBloques, tama
         `Buscando ${totalRequeridos} bloques libres para "${nombre}" (1 raíz + ${numIndicesL2} índices L2 + ${longitud} datos)... Encontrados.`,
         bloquesLibres, 0, 0
       ));
+      snapshots.push(clonarSnapshot(discoActual));
 
       bloqueIndice = bloquesLibres[0];
       bloqueIndice2 = bloquesLibres.slice(1, 1 + numIndicesL2);
       bloquesDatos = bloquesLibres.slice(1 + numIndicesL2);
       todosLosBloques = bloquesLibres;
-    }
+    
 
     // ── Asignar bloque índice RAÍZ (nivel 1) ──
     discoActual[bloqueIndice] = {
@@ -995,10 +1023,27 @@ export function simularAsignacionExtensiones(archivos, totalBloques, variante = 
     const { nombre, longitud } = archivo;
     const color = obtenerColor(indiceArchivo);
 
-    if (isNaN(longitud) || longitud <= 0) {
+    if (isNaN(longitud) || longitud === 0) {
       pasos.push(crearPaso(
         nombre, 'error', `Error: El archivo "${nombre}" requiere una longitud mayor a 0.`, [], 0, 0
       ));
+      snapshots.push(clonarSnapshot(discoActual));
+      return;
+    }
+
+    if (longitud < 0) {
+      let liberados = [];
+      for (let i = 0; i < totalBloques; i++) {
+        if (discoActual[i].archivo === nombre) {
+          discoActual[i] = { tipo: 'libre', archivo: null, estado: 'libre', color: null, puntero: null, indices: null, index: i };
+          liberados.push(i);
+        }
+      }
+      if (liberados.length > 0) {
+        pasos.push(crearPaso(nombre, 'ok', `Se liberó el archivo "${nombre}" (${liberados.length} bloques).`, liberados, 1, 1));
+      } else {
+        pasos.push(crearPaso(nombre, 'error', `No se encontró "${nombre}" para eliminar.`, [], 0, 0));
+      }
       snapshots.push(clonarSnapshot(discoActual));
       return;
     }
@@ -1007,35 +1052,7 @@ export function simularAsignacionExtensiones(archivos, totalBloques, variante = 
     const todosLosBloques = [];
     let bloquesAsignados = 0;
     
-    if (variante === 'manual') {
-      const extEntrada = archivo.extensiones || [];
-      if (extEntrada.length === 0 || extEntrada.some(e => isNaN(e.inicio) || isNaN(e.longitud))) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" requiere extensiones válidas numéricas en modo manual.`, [], 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      
-      extEntrada.forEach(ext => {
-        extensiones.push(ext);
-        for (let i = 0; i < ext.longitud; i++) {
-          todosLosBloques.push(ext.inicio + i);
-        }
-      });
-
-      const fueraRango = todosLosBloques.filter(b => b < 0 || b >= totalBloques);
-      if (fueraRango.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" usa bloques fuera de rango: ${fueraRango.join(', ')}.`, fueraRango, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      const ocupados = todosLosBloques.filter(b => discoActual[b].tipo !== 'libre');
-      if (ocupados.length > 0) {
-        pasos.push(crearPaso(nombre, 'error', `Error: "${nombre}" intenta usar bloques ocupados: ${ocupados.join(', ')}.`, ocupados, 0, 0));
-        snapshots.push(clonarSnapshot(discoActual));
-        return;
-      }
-      bloquesAsignados = todosLosBloques.length;
-    } else {
+    
       let inicioHueco = -1;
       let tamHueco = 0;
 
@@ -1069,7 +1086,7 @@ export function simularAsignacionExtensiones(archivos, totalBloques, variante = 
         snapshots.push(clonarSnapshot(discoActual));
         return;
       }
-    }
+    
 
     // Paso de inicio del archivo (encabezado)
     const tablaExt = extensiones.map((e, i) => `Ext${i+1}:[${e.inicio}..${e.inicio+e.longitud-1}]`).join(', ');
@@ -1078,6 +1095,7 @@ export function simularAsignacionExtensiones(archivos, totalBloques, variante = 
       `Archivo "${nombre}": ${extensiones.length} extensión(es) → ${tablaExt}. Total: ${todosLosBloques.length} bloques.`,
       [], 0, 0
     ));
+    snapshots.push(clonarSnapshot(discoActual));
 
     // Asignar bloque a bloque dentro de cada extensión
     extensiones.forEach((ext, extIdx) => {

@@ -1,3 +1,0 @@
-Proyecto1, 15
-Proyecto2, 22
-Proyecto3, 8

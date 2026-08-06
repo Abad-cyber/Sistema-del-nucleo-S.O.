@@ -1,0 +1,29 @@
+INSTRUCCIONES PARA TOMAR LAS CAPTURAS DE PANTALLA
+(Nómbralas exactamente así y súbelas por aquí)
+
+MÓDULO: CPU + MEMORIA
+* Datos Base (CPU): P1(llegada 0, ráfaga 7). P2(llegada 2, ráfaga 4). P3(llegada 4, ráfaga 1). P4(llegada 5, ráfaga 4).
+
+1. IMAGEN_4.png: Selecciona FCFS y ejecuta. Toma captura al Diagrama de Gantt resultante.
+2. IMAGEN_5.png: Selecciona SJF y ejecuta. Captura el Gantt resultante.
+3. IMAGEN_6.png: Selecciona SRT y ejecuta. Captura el Gantt donde se noten los cortes (las interrupciones) de los procesos.
+4. IMAGEN_7.png: Selecciona Round Robin (Quantum = 2) y ejecuta. Captura el Gantt segmentado equitativamente.
+
+* NUEVOS Datos Base (Memoria): Mem total = 1024, SO = 100. Procesos: P1(80), P2(120), P3(50), P4(200). 
+  (Luego liberas P1 y P3 para dejar huecos de 80 y 50. Finalmente ingresas P5 de 40 KB).
+5. IMAGEN_8.png: Selecciona First Fit. Sigue el caso de arriba e ingresa P5 (40 KB). Toma captura al Mapa de Memoria resultante donde se vea que tomó el bloque de 80.
+6. IMAGEN_9.png: Selecciona Best Fit. Sigue el mismo caso. Toma captura al Mapa de Memoria donde se vea que tomó el bloque de 50.
+7. IMAGEN_10.png: Selecciona Buddy System. Toma captura del Mapa de Memoria evidenciando los bloques particionados en potencias de 2.
+
+MÓDULO: ALMACENAMIENTO (DISCO)
+8. IMAGEN_11.png: Selecciona "Contigua". Ejecuta y toma captura del grid resaltando el problema o el mapa base.
+9. IMAGEN_12.png: Selecciona "Enlazada". Toma captura de la dispersión de bloques conectados por flechas/punteros.
+10. IMAGEN_13.png: Selecciona "Indexada". Toma captura del bloque índice apuntando a sus respectivos datos.
+11. IMAGEN_14.png: Selecciona "FAT". Toma captura de la tabla FAT renderizada.
+12. IMAGEN_15.png: Selecciona "Multinivel". Toma captura donde se aprecie el índice primario enlazando a índices secundarios.
+13. IMAGEN_16.png: Selecciona "Extents". Toma captura del panel que muestra la tupla Inicio-Longitud.
+14. IMAGEN_17.png: Selecciona "Bitmap". Toma captura de la matriz visual binaria (1s y 0s).
+
+PANEL LATERAL (PARÁMETROS):
+15. IMAGEN_PARAM_CPU.png: Captura vertical del panel izquierdo de configuración (CPU + Memoria).
+16. IMAGEN_PARAM_DISCO.png: Captura vertical del panel izquierdo de configuración (Disco).

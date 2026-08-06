@@ -12,7 +12,7 @@ import {
   simularAsignacionBitmap,
   calcularMetricasDisco,
   PALETA_ARCHIVOS,
-} from './algoritmos.js';
+} from './algoritmos.js?v=20260806l';
 
 import {
   renderizarGrillaDisco,
@@ -26,13 +26,13 @@ import {
   limpiarBitmapDisco,
   renderizarFlechasDisco,
   limpiarFlechasDisco,
-} from '../ui/discoRenderer.js';
+} from '../ui/discoRenderer.js?v=20260806l';
 
 // ═══════════════════════════════════════════════════════
 // ESTADO
 // ═══════════════════════════════════════════════════════
 let metodoActual     = 'contigua';
-let varianteContigua = 'manual'; // manual, ff, bf, wf
+let varianteContigua = 'dinamica'; // dinamica, manual, ff, bf, wf
 let snapshots       = [];
 let pasos           = [];
 let metadatos       = [];
@@ -49,96 +49,6 @@ const NOMBRES_VEL   = { 1: 'Muy lento', 2: 'Lento', 3: 'Normal', 4: 'Rápido', 5
 // ═══════════════════════════════════════════════════════
 // CONFIGURACIONES DE COLUMNAS POR MÉTODO
 // ═══════════════════════════════════════════════════════
-const COLUMNAS = {
-  contigua_manual:   ['Archivo', 'Inicio', 'Longitud'],
-  contigua_dinamica: ['Archivo', 'Longitud (Bloques)'],
-  enlazada_dinamica: ['Archivo', 'Longitud (Bloques)'],
-  enlazada_manual:   ['Archivo', 'Punteros (ej: 2,5,9)'],
-  indexada_dinamica: ['Archivo', 'Longitud (Bloques)'],
-  indexada_manual:   ['Archivo', 'Bloque Índice', 'Datos (ej: 4,6)'],
-  fat_dinamica:      ['Archivo', 'Longitud (Bloques)'],
-  fat_manual:        ['Archivo', 'Punteros (ej: 1,8,15)'],
-  'indexada-ml_dinamica': ['Archivo', 'Longitud (Bloques)'],
-  'indexada-ml_manual':   ['Archivo', 'Raíz', 'Subíndices', 'Datos (ej: 2)'],
-  extensiones_dinamica: ['Archivo', 'Longitud (Bloques)'],
-  extensiones_manual:   ['Archivo', 'Exts (ini,lon; ini,lon)'],
-  bitmap_dinamica:   ['Archivo', 'Longitud (Bloques)'],
-  bitmap_manual:     ['Archivo', 'Longitud (Bloques)'], // Bitmap solo usa dinámica en realidad
-};
-
-const HINT_FORMATO = {
-  contigua_manual: {
-    titulo: 'Formato (Contigua - Manual)',
-    lineas: ['archivo, inicio, longitud', 'AA, 1, 3', 'BB, 14, 2'],
-    sub: 'archivo, inicio, longitud',
-  },
-  contigua_dinamica: {
-    titulo: 'Formato (Contigua - FF / BF / WF)',
-    lineas: ['archivo, longitud', 'AA, 3', 'BB, 2'],
-    sub: 'archivo, longitud',
-  },
-  enlazada_dinamica: {
-    titulo: 'Formato (Enlazada - Dinámica)',
-    lineas: ['archivo, longitud', 'AA, 5', 'BB, 3'],
-    sub: 'archivo, longitud (el sistema enlazará los bloques libres)',
-  },
-  enlazada_manual: {
-    titulo: 'Formato (Enlazada - Manual)',
-    lineas: ['archivo, bloque1, bloque2...', 'AA, 2, 5, 9'],
-    sub: 'archivo, secuencia exacta de punteros',
-  },
-  indexada_dinamica: {
-    titulo: 'Formato (Indexada - Dinámica)',
-    lineas: ['archivo, longitud', 'AA, 5', 'BB, 2'],
-    sub: 'archivo, longitud (el sistema creará el bloque índice automáticamente)',
-  },
-  indexada_manual: {
-    titulo: 'Formato (Indexada - Manual)',
-    lineas: ['archivo, indice, dato1, dato2...', 'AA, 10, 4, 6'],
-    sub: 'archivo, bloque índice, secuencia exacta de datos',
-  },
-  fat_dinamica: {
-    titulo: 'Formato (FAT - Dinámica)',
-    lineas: ['archivo, longitud', 'AA, 4', 'BB, 6'],
-    sub: 'archivo, longitud (el sistema asignará y actualizará la tabla FAT)',
-  },
-  fat_manual: {
-    titulo: 'Formato (FAT - Manual)',
-    lineas: ['archivo, bloque1, bloque2...', 'AA, 1, 8, 15'],
-    sub: 'archivo, secuencia exacta de punteros en FAT',
-  },
-  'indexada-ml_dinamica': {
-    titulo: 'Formato (Ind. Multi-nivel - Dinámica)',
-    lineas: ['archivo, longitud', 'AA, 12', 'BB, 15'],
-    sub: 'archivo, longitud (el sistema calculará y armará el árbol de índices)',
-  },
-  'indexada-ml_manual': {
-    titulo: 'Formato (Ind. Multi-nivel - Manual)',
-    lineas: ['archivo, raiz, sub1, sub2, |, d1, d2...', 'AA, 0, 1, 2, |, 5, 6, 7, 8'],
-    sub: 'archivo, índice raíz, subíndices, separador |, bloques de datos',
-  },
-  extensiones_dinamica: {
-    titulo: 'Formato (Extensiones - Dinámica)',
-    lineas: ['archivo, longitud', 'AA, 10', 'BB, 7'],
-    sub: 'archivo, longitud (el sistema agrupará el archivo en extensiones libres)',
-  },
-  extensiones_manual: {
-    titulo: 'Formato (Extensiones - Manual)',
-    lineas: ['archivo, ini1, lon1, ini2, lon2...', 'AA, 2, 3, 10, 2'],
-    sub: 'archivo, pares de inicio y longitud (extensión 1, extensión 2...)',
-  },
-  bitmap_dinamica: {
-    titulo: 'Formato (Bitmap - Automático)',
-    lineas: ['archivo, longitud', 'AA, 8', 'BB, 5'],
-    sub: 'archivo, longitud (el bitmap buscará los espacios libres)',
-  },
-  bitmap_manual: {
-    titulo: 'Formato (Bitmap - Automático)',
-    lineas: ['archivo, longitud', 'AA, 8', 'BB, 5'],
-    sub: 'archivo, longitud (el bitmap buscará los espacios libres)',
-  },
-};
-
 // ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════
@@ -190,6 +100,10 @@ function inicializarSelectorMetodo() {
       actualizarInterfazMetodo();
     });
   });
+
+  // Sincronizar estado con el botón activo en el DOM al cargar
+  const btnActivo = document.querySelector('#grupoModalidadDisco .btn-politica.activo');
+  if (btnActivo) varianteContigua = btnActivo.dataset.variante || 'dinamica';
 }
 
 function actualizarInterfazMetodo() {
@@ -217,7 +131,7 @@ function actualizarInterfazMetodo() {
         if (btnDinamica) btnDinamica.style.display = 'inline-block';
         document.querySelectorAll('#grupoModalidadDisco .contigua-only').forEach(b => b.style.display = 'none');
         
-        // Si estaba en una variante que no existe para el método actual, resetear
+                // Si estaba en una variante que no existe para el método actual, resetear
         if (['ff', 'bf', 'wf'].includes(varianteContigua)) {
           varianteContigua = 'dinamica';
           document.querySelectorAll('#grupoModalidadDisco .btn-politica').forEach(b => b.classList.remove('activo'));
@@ -227,35 +141,11 @@ function actualizarInterfazMetodo() {
     }
   }
 
-  actualizarColumnasTabla();
-  actualizarHintFormato();
-  limpiarTablaEntradaDisco();
-  agregarFilaDisco();
-}
-
-function actualizarColumnasTabla() {
-  const thead = document.getElementById('theadEntradaDisco');
-  if (!thead) return;
-  let key = metodoActual + '_' + (['ff', 'bf', 'wf'].includes(varianteContigua) ? 'dinamica' : varianteContigua);
-  if (key === 'bitmap_manual') key = 'bitmap_dinamica';
-  const cols = COLUMNAS[key] || COLUMNAS.contigua_dinamica;
-  thead.innerHTML = '<tr>' + cols.map(c => `<th scope="col">${c}</th>`).join('') + '<th scope="col"></th></tr>';
-}
-
-function actualizarHintFormato() {
-  const hint = document.getElementById('hintFormatoDisco');
-  const sub = document.getElementById('zaSubDisco');
-  if (!hint) return;
-  
-  // Construir la clave usando el método actual y la modalidad (dinamica/manual)
-  let key = `${metodoActual}_${varianteContigua}`;
-  
-  // Si por alguna razón la clave no existe en HINT_FORMATO, usamos contigua_manual por defecto
-  const cfg = HINT_FORMATO[key] || HINT_FORMATO.contigua_manual;
-  
-  hint.innerHTML = `<div class="hint-titulo">${cfg.titulo}</div>` +
-    cfg.lineas.map(l => `<code>${l}</code>`).join('');
-  if (sub) sub.textContent = cfg.sub;
+  // No limpiamos la tabla para no perder los datos ingresados al cambiar de método
+  const cuerpo = document.getElementById('cuerpoTablaEntradaDisco');
+  if (cuerpo && cuerpo.children.length === 0) {
+    agregarFilaDisco();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -279,10 +169,8 @@ function agregarFilaDisco(datos = null) {
   const tr = document.createElement('tr');
   tr.style.animation = 'entradaFila .28s ease both';
 
-  let key = metodoActual + '_' + (['ff', 'bf', 'wf'].includes(varianteContigua) ? 'dinamica' : varianteContigua);
-  if (key === 'bitmap_manual') key = 'bitmap_dinamica'; // fallback
-  const cols = COLUMNAS[key] || COLUMNAS.contigua_dinamica;
   const valores = datos || [];
+  const cols = ['Archivo', 'Tamaño (Bloques)'];
 
   cols.forEach((col, i) => {
     const td = document.createElement('td');
@@ -568,7 +456,7 @@ function manejarArchivoDisco(archivo) {
         nombreEl.innerHTML = `📂 ${span.innerHTML}  (${lineas.length} archivo(s))`;
       }
       animarZona('exito');
-      mostrarToast(`✓ ${lineas.length} archivo(s) cargados`, 'exito');
+      mostrarToast(`${lineas.length} archivo(s) cargados`, 'exito');
     } catch (err) {
       animarZona('error-anim');
       mostrarToast(`Error al procesar: ${err.message}`, 'error');
@@ -597,7 +485,7 @@ export function ejecutarSimulacionDisco() {
   try {
     switch (metodoActual) {
       case 'contigua':
-        resultado = simularAsignacionContigua(archivos, totalBloques, varianteContigua);
+        resultado = simularAsignacionContigua(archivos, totalBloques, 'ff');
         break;
       case 'enlazada':
         resultado = simularAsignacionEnlazada(archivos, totalBloques, tamanioPuntero, tamanioBloque, varianteContigua);
@@ -757,7 +645,7 @@ function reproducirSiguientePasoDisco() {
   if (!estaReproduciendo) return;
   if (pasoActual >= totalPasos) {
     detenerAutoPlayDisco();
-    mostrarToast('Simulación de disco completada ✓', 'exito');
+    mostrarToast('Simulación de disco completada', 'exito');
     return;
   }
   mostrarPasoDisco(pasoActual + 1);

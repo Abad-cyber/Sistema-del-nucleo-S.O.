@@ -1,3 +1,0 @@
-ProgramaA, 10
-ProgramaB, 25
-ProgramaC, 7

@@ -1,20 +1,20 @@
 // main.js — Orquestador principal del Simulador Unificado
 // Coordina CPU + memoria + animación sincronizada
 
-import { parsearTexto, leerTablaManual, sincronizarTablaDOM, crearFilaTabla, asignarEventosFilas } from './parser.js';
-import { fcfs, sjf, roundRobin, srt } from './planificadores/algoritmos.js';
+import { parsearTexto, leerTablaManual, sincronizarTablaDOM, crearFilaTabla, asignarEventosFilas } from './parser.js?v=20260806l';
+import { fcfs, sjf, roundRobin, srt } from './planificadores/algoritmos.js?v=20260806l';
 import {
   construirMemoriaInicial,
   firstFit, bestFit, worstFit,
   buddySystem, liberarProceso, buddyLiberar,
   calcularMetricasMemoria,
   COLOR_LIBRE,
-} from './memoria/algoritmos.js';
-import { renderizarMapaMemoria, renderizarLeyenda, resetColoresMemoria, PALETA_GRADIENTES } from './ui/memRenderer.js';
-import { dibujarGantt, renderizarLeyendaGantt } from './ui/ganttRenderer.js';
-import { actualizarMetricasCPU, actualizarMetricasMemoria, renderizarTablaCPU, renderizarTablaMemoria } from './ui/metricsRenderer.js';
-import { agregarPasoLog, limpiarLog, rerenderizarLog, agregarItemCola, limpiarListaColas, rerenderizarColas, generarEstadosCola, resetColoresProcesos, setPaletaExterna } from './ui/stepLog.js';
-import { inicializarSimuladorDisco, ejecutarSimulacionDisco } from './disco/mainDisco.js';
+} from './memoria/algoritmos.js?v=20260806l';
+import { renderizarMapaMemoria, renderizarLeyenda, resetColoresMemoria, PALETA_GRADIENTES } from './ui/memRenderer.js?v=20260806l';
+import { dibujarGantt, renderizarLeyendaGantt } from './ui/ganttRenderer.js?v=20260806l';
+import { actualizarMetricasCPU, actualizarMetricasMemoria, renderizarTablaCPU, renderizarTablaMemoria } from './ui/metricsRenderer.js?v=20260806l';
+import { agregarPasoLog, limpiarLog, rerenderizarLog, agregarItemCola, limpiarListaColas, rerenderizarColas, generarEstadosCola, resetColoresProcesos, setPaletaExterna } from './ui/stepLog.js?v=20260806l';
+import { inicializarSimuladorDisco, ejecutarSimulacionDisco } from './disco/mainDisco.js?v=20260806l';
 
 // ═══════════════════════════════════════════════════════
 // ESTADO GLOBAL
@@ -105,14 +105,16 @@ function activarModulo(modulo) {
   if (modulo === 'cpu') {
     navGrupoCPU?.classList.remove('oculto');
     navGrupoDisco?.classList.add('oculto');
-    btnEjecutarSidebar.onclick = ejecutarSimulacion;
-    textoEjecutar.textContent = 'Simular CPU+MEM';
+    btnEjecutarSidebar?.classList.remove('oculto');
+    if (btnEjecutarSidebar) btnEjecutarSidebar.onclick = ejecutarSimulacion;
+    if (textoEjecutar) textoEjecutar.textContent = 'Simular CPU+MEM';
     navegarA('parametros');
   } else if (modulo === 'disco') {
     navGrupoCPU?.classList.add('oculto');
     navGrupoDisco?.classList.remove('oculto');
-    btnEjecutarSidebar.onclick = ejecutarSimulacionDisco;
-    textoEjecutar.textContent = 'Simular Disco';
+    btnEjecutarSidebar?.classList.remove('oculto');
+    if (btnEjecutarSidebar) btnEjecutarSidebar.onclick = ejecutarSimulacionDisco;
+    if (textoEjecutar) textoEjecutar.textContent = 'Simular Disco';
     navegarA('parametrosDisco');
   }
 }
@@ -121,7 +123,11 @@ function navegarA(idPagina) {
   if (idPagina === 'home') {
     document.getElementById('navGrupoCPU')?.classList.add('oculto');
     document.getElementById('navGrupoDisco')?.classList.add('oculto');
-    document.getElementById('btnEjecutarSidebar').onclick = null;
+    const btnEjecutar = document.getElementById('btnEjecutarSidebar');
+    if (btnEjecutar) {
+      btnEjecutar.classList.add('oculto');
+      btnEjecutar.onclick = null;
+    }
   }
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('activo'));
   document.querySelectorAll('.pagina').forEach(p => p.classList.remove('activa'));
@@ -234,14 +240,14 @@ function manejarArchivo(archivo) {
   const ext = archivo.name.split('.').pop().toLowerCase();
   if (!['csv', 'txt'].includes(ext)) {
     animarZona('error-anim');
-    mostrarToast('\u274c Solo se permiten archivos .csv o .txt', 'error');
+    mostrarToast(`Solo se permiten archivos .csv o .txt`, 'error');
     return;
   }
 
   const maxSize = 5 * 1024 * 1024;
   if (archivo.size > maxSize) {
     animarZona('error-anim');
-    mostrarToast('\u274c El archivo es muy grande (m\u00e1ximo 5MB)', 'error');
+    mostrarToast(`El archivo es muy grande (m\u00e1ximo 5MB)`, 'error');
     return;
   }
 
@@ -249,12 +255,12 @@ function manejarArchivo(archivo) {
 
   lector.onerror = () => {
     animarZona('error-anim');
-    mostrarToast('\u274c Error al leer el archivo', 'error');
+    mostrarToast(`Error al leer el archivo`, 'error');
   };
 
   lector.onabort = () => {
     animarZona('error-anim');
-    mostrarToast('\u26a0\ufe0f Lectura de archivo cancelada', 'error');
+    mostrarToast(`Lectura de archivo cancelada`, 'error');
   };
 
   lector.onload = e => {
@@ -262,14 +268,14 @@ function manejarArchivo(archivo) {
       const contenido = e.target.result;
       if (!contenido || contenido.trim().length === 0) {
         animarZona('error-anim');
-        mostrarToast('\u274c El archivo est\u00e1 vac\u00edo', 'error');
+        mostrarToast(`El archivo est\u00e1 vac\u00edo`, 'error');
         return;
       }
 
       const ps = parsearTexto(contenido);
       if (!ps.length) {
         animarZona('error-anim');
-        mostrarToast('\u274c No se encontraron procesos v\u00e1lidos', 'error');
+        mostrarToast(`No se encontraron procesos v\u00e1lidos`, 'error');
         return;
       }
 
@@ -280,10 +286,10 @@ function manejarArchivo(archivo) {
       nombreEscapado.textContent = archivo.name;
       document.getElementById('nombreArchivo').innerHTML = `\ud83d\udcc2 ${nombreEscapado.innerHTML}  (${ps.length} proceso(s))`;
       animarZona('exito');
-      mostrarToast(`\u2713 ${ps.length} proceso(s) cargados correctamente`, 'exito');
+      mostrarToast(`${ps.length} proceso(s) cargados correctamente`, 'exito');
     } catch (error) {
       animarZona('error-anim');
-      mostrarToast(`\u274c Error al procesar el archivo: ${error.message}`, 'error');
+      mostrarToast(`Error al procesar el archivo: ${error.message}`, 'error');
     }
   };
 
@@ -676,7 +682,7 @@ function reproducirSiguientePaso() {
   if (!estaReproduciendo) return;
   if (pasoActual >= totalPasos) {
     detenerAutoPlay();
-    mostrarToast('Simulaci\u00f3n completada \u2713', 'exito');
+    mostrarToast(`Simulaci\u00f3n completada`, 'exito');
     return;
   }
   mostrarPaso(pasoActual + 1);

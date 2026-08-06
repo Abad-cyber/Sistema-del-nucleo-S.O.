@@ -1,3 +1,0 @@
-Archivo1, 2, 5
-Archivo2, 15, 3
-Archivo3, 20, 8

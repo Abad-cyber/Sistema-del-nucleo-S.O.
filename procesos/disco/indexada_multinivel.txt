@@ -1,21 +1,8 @@
-# Asignación INDEXADA MULTI-NIVEL (2 niveles)
-# ==============================================
-# Método: Indexada Multi-Nivel
-# Formato de la tabla (4 columnas separadas por comas):
-#   columna 1: nombre del archivo
-#   columna 2: bloque índice RAÍZ (nivel 1)
-#   columna 3: índices nivel 2 (separados por espacio)
-#   columna 4: bloques de datos (separados por espacio)
-#
-# Estructura:
-#   Bloque raíz → apunta a bloques índice nivel 2
-#   Bloques nivel 2 → apuntan a bloques de datos
-#
-# Útil para archivos MUY grandes donde un solo bloque índice
-# no puede almacenar todos los punteros.
-#
-# Disco recomendado: 120 bloques, bloque 512 bytes, puntero 4 bytes
-# ==============================================
-AA, 10, 20 30, 1 2 3 4 5 6 7 8
-BB, 11, 21 31 41, 9 13 14 16 17 18 22 23 24 26 27 28
-CC, 12, 22, 32 33 34 35
+# Asignación Indexada Multi-Nivel (7 archivos)
+SISTEMA, 5
+KERNEL, 3
+APP_D, 9
+USER_DOCS, 18
+TEMP_4, 7
+BIG_DATA, 130
+LOGS, 8

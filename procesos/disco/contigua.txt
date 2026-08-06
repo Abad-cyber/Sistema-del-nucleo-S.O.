@@ -1,0 +1,9 @@
+# Asignación Contigua (7 archivos)
+SISTEMA, 5
+KERNEL, 3
+APP_A, 8
+USER_DOCS, 10
+TEMP_1, 2
+USER_DOCS, 10
+DOTA, 13
+
